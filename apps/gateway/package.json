@@ -1,0 +1,31 @@
+{
+  "name": "@mirrorgrid/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@fastify/cookie": "11.1.2",
+    "@fastify/cors": "11.3.0",
+    "@fastify/http-proxy": "11.6.2",
+    "@fastify/swagger": "9.8.1",
+    "@fastify/swagger-ui": "6.1.1",
+    "@mirrorgrid/config": "*",
+    "@mirrorgrid/logging": "*",
+    "@mirrorgrid/platform": "*",
+    "fastify": "5.12.4",
+    "undici": "7.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.9",
+    "tsx": "4.19.3",
+    "typescript": "5.9.3"
+  }
+}

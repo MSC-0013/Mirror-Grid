@@ -1,0 +1,31 @@
+{
+  "name": "@mirrorgrid/control",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/server.js",
+  "scripts": {
+    "build": "tsc -b",
+    "dev": "tsx watch src/server.ts",
+    "start": "node dist/server.js",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@fastify/cookie": "11.1.2",
+    "@mirrorgrid/config": "*",
+    "@mirrorgrid/db": "*",
+    "@mirrorgrid/logging": "*",
+    "@mirrorgrid/platform": "*",
+    "@mirrorgrid/validation": "*",
+    "argon2": "0.45.1",
+    "drizzle-orm": "0.45.2",
+    "fastify": "5.12.4",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.9",
+    "tsx": "4.19.3",
+    "typescript": "5.9.3"
+  }
+}
