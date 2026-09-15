@@ -7,8 +7,10 @@ export const paginationQuerySchema = z.object({
 
 export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
 
+export const uuidSchema = z.string().uuid();
+
 export const uuidParamSchema = z.object({
-  id: z.string().uuid(),
+  id: uuidSchema,
 });
 
 export interface PaginationMeta {

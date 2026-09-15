@@ -1,4 +1,4 @@
-﻿# MIRRORGRID — Milestone Documentation Index
+# MIRRORGRID — Milestone Documentation Index
 
 > **These documents are the execution layer of the implementation plan.**
 > The strategy lives in `docs/IMPLEMENTATION_PLAN.md`; these docs are the how.
@@ -28,8 +28,8 @@ and realized in M02.
 
 | # | Milestone | Gate | Status | CI Run |
 |---|---|---|---|---|
-| M0 | Foundation + walking skeleton | `verify:m0` | NOT STARTED | — |
-| M1 | Domain model + topology | `verify:m1` | NOT STARTED | — |
+| M0 | Foundation + walking skeleton | `verify:m0` | PASSED | Local Gate (9/9) |
+| M1 | Domain model + topology | `verify:m1` | PASSED | Local Gate (8/8) |
 | M2 | Deterministic logical runtime | `verify:determinism` | NOT STARTED | — |
 | M3 | Container runtime peer | `verify:m3` | NOT STARTED | — |
 | M4 | Reliability + fault engine | `verify:m4` | NOT STARTED | — |

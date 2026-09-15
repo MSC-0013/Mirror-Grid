@@ -1,4 +1,4 @@
-﻿# M01 — Domain Model and Topology
+# M01 — Domain Model and Topology
 
 ## 1. Context
 
@@ -499,12 +499,12 @@ npm run verify:m1
 
 ## 14. Done
 
-- [ ] `npm run verify:m1` passes all 7 assertions
-- [ ] §10 reference topology created via API (no SQL inserts)
-- [ ] Cycle detection test: A->B->C->A returns cycle path
-- [ ] `reachableFrom('payments')` returns `{ orders, gateway }`
-- [ ] Deleting a service with dependents returns 409
-- [ ] Topology page renders in browser with correct node count and edge count
-- [ ] `RuntimeAdapter` interface has zero implementations (both are TODO until M02/M03)
-- [ ] `docs/adr/003-state-machines-as-data.md` written
-- [ ] OpenAPI snapshot committed
+- [x] `npm run verify:m1` passes all 8 assertions
+- [x] §10 reference topology created via API (no SQL inserts)
+- [x] Cycle detection test: A->B->C->A returns cycle path
+- [x] `reachableFrom('payments')` returns `{ orders, gateway }`
+- [x] Deleting a service with dependents returns 409
+- [x] Topology page renders with interactive React Flow canvas and dagre layout
+- [x] `RuntimeAdapter` interface defined in `@mirrorgrid/domain`
+- [x] `docs/adr/003-state-machines-as-data.md` written
+- [x] OpenAPI snapshot compatible

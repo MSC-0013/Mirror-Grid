@@ -53,6 +53,10 @@ export class AppError extends Error {
     return new AppError('CONFLICT', message, 409, details);
   }
 
+  public static unprocessable(message: string, details?: unknown): AppError {
+    return new AppError('UNPROCESSABLE_ENTITY', message, 422, details);
+  }
+
   public static rateLimited(message = 'Rate limit exceeded'): AppError {
     return new AppError('RATE_LIMITED', message, 429);
   }

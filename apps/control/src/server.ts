@@ -7,6 +7,10 @@ import { AppError } from '@mirrorgrid/platform';
 import { authRoutes } from './modules/auth/auth.routes.js';
 import { worldsRoutes } from './modules/worlds/worlds.routes.js';
 import { healthRoutes } from './modules/health/health.routes.js';
+import { servicesRoutes } from './modules/services/index.js';
+import { dependenciesRoutes } from './modules/dependencies/index.js';
+import { workloadsRoutes } from './modules/workloads/index.js';
+import { graphRoutes } from './modules/graph/index.js';
 
 export function buildServer(): FastifyInstance {
   const logger = createLogger({ name: 'control-plane' });
@@ -41,6 +45,10 @@ export function buildServer(): FastifyInstance {
   app.register(healthRoutes, { prefix: '/health' });
   app.register(authRoutes, { prefix: '/api/v1/auth' });
   app.register(worldsRoutes, { prefix: '/api/v1/worlds' });
+  app.register(servicesRoutes, { prefix: '/api/v1/worlds/:worldId/services' });
+  app.register(dependenciesRoutes, { prefix: '/api/v1/worlds/:worldId/dependencies' });
+  app.register(workloadsRoutes, { prefix: '/api/v1/worlds/:worldId/workloads' });
+  app.register(graphRoutes, { prefix: '/api/v1/worlds/:worldId/graph' });
 
   return app;
 }

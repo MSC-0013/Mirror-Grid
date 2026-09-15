@@ -15,6 +15,7 @@
     "@fastify/cookie": "11.1.2",
     "@mirrorgrid/config": "*",
     "@mirrorgrid/db": "*",
+    "@mirrorgrid/domain": "*",
     "@mirrorgrid/logging": "*",
     "@mirrorgrid/platform": "*",
     "@mirrorgrid/validation": "*",

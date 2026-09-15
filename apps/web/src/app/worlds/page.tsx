@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Globe, Plus, Cpu, X, Calendar, Server } from 'lucide-react';
 
 interface World {
@@ -146,7 +147,18 @@ export default function WorldsPage() {
           }}
         >
           {worlds.map(world => (
-            <div key={world.id} className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+            <Link
+              key={world.id}
+              href={`/worlds/${world.id}`}
+              className="card"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'space-between',
+                cursor: 'pointer',
+                transition: 'border-color 0.15s, box-shadow 0.15s',
+              }}
+            >
               <div>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
                   <h3 style={{ fontSize: 16, fontWeight: 600 }}>{world.name}</h3>
@@ -180,7 +192,7 @@ export default function WorldsPage() {
                   <span>{new Date(world.createdAt).toLocaleDateString()}</span>
                 </div>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

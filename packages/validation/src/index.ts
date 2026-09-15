@@ -1,5 +1,6 @@
 export {
   paginationQuerySchema,
+  uuidSchema,
   uuidParamSchema,
   paginatedResult,
 } from './schemas/common.js';

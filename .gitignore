@@ -13,6 +13,7 @@ out/
 # Production builds
 dist/
 build/
+*.tsbuildinfo
 
 # Turborepo
 .turbo/
