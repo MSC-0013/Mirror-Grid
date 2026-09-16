@@ -19,6 +19,12 @@ import { securityPlugin } from './plugins/security.plugin.js';
 import { auditRoutes } from './modules/audit/audit.routes.js';
 import { userRoutes } from './modules/users/user.routes.js';
 import { jobsRoutes } from './modules/jobs/jobs.routes.js';
+import {
+  eventsRoutes,
+  getWebSocketGateway,
+  getOutboxRelay,
+  getActivityProjector,
+} from './modules/events/index.js';
 
 // Polyfill BigInt serialization for Fastify JSON responses
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -67,6 +73,7 @@ export function buildServer(): FastifyInstance {
   app.register(userRoutes, { prefix: '/api/v1/users' });
   app.register(auditRoutes, { prefix: '/api/v1/audit-logs' });
   app.register(jobsRoutes, { prefix: '/api/v1/jobs' });
+  app.register(eventsRoutes, { prefix: '/api/v1' });
   app.register(worldsRoutes, { prefix: '/api/v1/worlds' });
   app.register(servicesRoutes, { prefix: '/api/v1/worlds/:worldId/services' });
   app.register(dependenciesRoutes, { prefix: '/api/v1/worlds/:worldId/dependencies' });
@@ -77,6 +84,24 @@ export function buildServer(): FastifyInstance {
   app.register(breakersRoutes, { prefix: '/api/v1/worlds/:worldId/breakers' });
   app.register(runtimeRoutes, { prefix: '/api/v1/worlds/:worldId/runtime' });
   app.register(experimentRoutes, { prefix: '/api/v1/worlds/:worldId/experiments' });
+
+  // Lifecycle hooks for WebSockets and background event daemons
+  app.addHook('onReady', async () => {
+    if (app.server) {
+      try {
+        const wsGateway = getWebSocketGateway();
+        wsGateway.attach(app.server);
+      } catch (err) {
+        logger.warn({ err }, 'WebSocketGateway already attached or server not available');
+      }
+    }
+  });
+
+  app.addHook('onClose', async () => {
+    await getWebSocketGateway().close();
+    getOutboxRelay().stop();
+    getActivityProjector().stop();
+  });
 
   return app;
 }

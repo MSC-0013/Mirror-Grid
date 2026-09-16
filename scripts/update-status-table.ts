@@ -86,8 +86,9 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M8',
     name: 'Event platform: outbox, Kafka, CQRS',
     gate: 'verify:events',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence:
+      '5/5 gate; atomic outbox rollback; per-world monotonic sequencing; idempotent deduplication; CQRS read projection; sub-50ms WebSockets',
   },
   {
     id: 'M9',

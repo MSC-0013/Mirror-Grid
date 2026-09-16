@@ -17,6 +17,7 @@
     "@mirrorgrid/container-runtime": "*",
     "@mirrorgrid/db": "*",
     "@mirrorgrid/domain": "*",
+    "@mirrorgrid/events": "*",
     "@mirrorgrid/experiments": "*",
     "@mirrorgrid/jobs": "*",
     "@mirrorgrid/logging": "*",

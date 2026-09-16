@@ -37,7 +37,7 @@ and realized in M02.
 | M5 | Experiment engine + flagship | `verify:flagship` | ✅ **PASSED** | 5/5 gate; flagship scenario; MTTD/MTTR verified; retry budget <= 1.15x; Tier 1 / v0.1 certified |
 | M6 | Security: RBAC, audit, rate limiting | `verify:m6` | ✅ **PASSED** | 6/6 gate; immediate session revocation; RBAC matrix; SHA-256 tamper detection; RFC 6585 rate limiting |
 | M7 | Async platform: jobs, leases, DLQ | `verify:concurrency` | ✅ **PASSED** | 6/6 gate; mutual exclusion; orphan lease recovery; poison pill DLQ transition; redrive; 500 jobs processed concurrently |
-| M8 | Event platform: outbox, Kafka, CQRS | `verify:events` | ⬜ NOT STARTED | — |
+| M8 | Event platform: outbox, Kafka, CQRS | `verify:events` | ✅ **PASSED** | 5/5 gate; atomic outbox rollback; per-world monotonic sequencing; idempotent deduplication; CQRS read projection; sub-50ms WebSockets |
 | M9 | Observability | `verify:observability` | ⬜ NOT STARTED | — |
 | M10 | Reliability engine: SLO, RCA, reports | `verify:reliability` | ⬜ NOT STARTED | — |
 | M11 | Snapshot, replay, search, DR | `verify:recovery` | ⬜ NOT STARTED | — |
