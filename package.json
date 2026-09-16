@@ -31,6 +31,7 @@
     "verify:reliability": "node --import tsx tests/gates/verify-reliability.ts",
     "verify:recovery": "node --import tsx tests/gates/verify-recovery.ts",
     "verify:ha": "node --import tsx tests/gates/verify-ha.ts",
+    "verify:campaign": "node --expose-gc --import tsx tests/gates/verify-campaign.ts",
     "status:update": "node --import tsx scripts/update-status-table.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\""

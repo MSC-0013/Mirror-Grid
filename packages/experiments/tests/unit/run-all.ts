@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const tests = ['freeze.test.ts', 'detector-engine.test.ts', 'orchestrator.test.ts'];
+const tests = ['freeze.test.ts', 'detector-engine.test.ts', 'orchestrator.test.ts', 'campaign.test.ts'];
 
 console.log('====================================================');
 console.log('Running @mirrorgrid/experiments unit tests...');
