@@ -118,8 +118,9 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M12',
     name: 'Containers, Kubernetes, HA',
     gate: 'verify:ha',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence:
+      '6/6 gate; World->K8s manifest compilation; OpenAPI validation; zero-downtime rolling update (maxUnavailable: 0); 100% HA pod termination drain; cascade teardown',
   },
   {
     id: 'M13',

@@ -34,7 +34,7 @@ Latency, queue growth, saturation, retry amplification, and cascading failure fa
 | M9 | Observability | `verify:observability` | ✅ **PASSED** | 5/5 gate; W3C traceparent 4-hop propagation; Prometheus /metrics format; correlated structured logging; trace waterfall critical path; standalone SQLite spans |
 | M10 | Reliability engine: SLO, RCA, reports | `verify:reliability` | ✅ **PASSED** | 5/5 gate; Google SRE multi-window burn rate (14.4x, 6.0x); dual-window suppression; graph RCA (>90% confidence); SQLite WAL persistence; executive report synthesis |
 | M11 | Snapshot, replay, search, DR | `verify:recovery` | ✅ **PASSED** | 5/5 gate; deterministic rewind/replay hash identity; bisection pinpointed 1-tick drift in <=7 steps; 96% deduplication; DR cold restore verified; RPO=1.20s, RTO=1ms |
-| M12 | Containers, Kubernetes, HA | `verify:ha` | ⬜ NOT STARTED | — |
+| M12 | Containers, Kubernetes, HA | `verify:ha` | ✅ **PASSED** | 6/6 gate; World->K8s manifest compilation; OpenAPI validation; zero-downtime rolling update (maxUnavailable: 0); 100% HA pod termination drain; cascade teardown |
 | M13 | Performance, hardening, campaign | `verify:campaign` | ⬜ NOT STARTED | — |
 <!-- STATUS_TABLE_END -->
 

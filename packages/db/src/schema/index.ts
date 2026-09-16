@@ -10,3 +10,4 @@ export * from './events.js';
 export * from './observability.js';
 export * from './sre.js';
 export * from './recovery.js';
+export * from './kubernetes.js';

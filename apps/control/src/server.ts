@@ -28,6 +28,7 @@ import {
 import { tracesRoutes, metricsRoutes } from './modules/observability/index.js';
 import { sloRoutes, rcaRoutes } from './modules/sre/index.js';
 import { recoveryRoutes } from './modules/recovery/index.js';
+import { k8sRoutes } from './modules/k8s/index.js';
 
 // Polyfill BigInt serialization for Fastify JSON responses
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -92,6 +93,7 @@ export function buildServer(): FastifyInstance {
   app.register(sloRoutes, { prefix: '/api/v1' });
   app.register(rcaRoutes, { prefix: '/api/v1' });
   app.register(recoveryRoutes, { prefix: '/api/v1' });
+  app.register(k8sRoutes, { prefix: '/api/v1' });
 
   // Lifecycle hooks for WebSockets and background event daemons
   app.addHook('onReady', async () => {
