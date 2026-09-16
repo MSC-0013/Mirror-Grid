@@ -1,0 +1,25 @@
+{
+  "name": "@mirrorgrid/synthetic-service",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@mirrorgrid/reliability": "*",
+    "fastify": "5.12.4"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.9",
+    "tsx": "4.19.3",
+    "typescript": "5.9.3"
+  }
+}

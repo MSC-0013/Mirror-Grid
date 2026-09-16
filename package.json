@@ -22,6 +22,7 @@
     "verify:m1": "node --import tsx tests/gates/verify-m1.ts",
     "verify:determinism": "node --import tsx tests/gates/verify-determinism.ts",
     "verify:m4": "node --import tsx tests/gates/verify-m4.ts",
+    "verify:m3": "node --import tsx tests/gates/verify-m3.ts",
     "status:update": "node --import tsx scripts/update-status-table.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\""

@@ -18,6 +18,7 @@ import {
   Zap,
   ShieldAlert,
   Flame,
+  Server,
 } from 'lucide-react';
 import { TopologyCanvas } from '@/components/topology/topology-canvas';
 import {
@@ -448,6 +449,24 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
             }}
           >
             <Flame size={14} color="#ef4444" /> Chaos Faults
+          </Link>
+          <Link
+            href={`/worlds/${worldId}/fleet`}
+            style={{
+              padding: '7px 12px',
+              borderRadius: 6,
+              border: '1px solid var(--color-border)',
+              backgroundColor: '#FFFFFF',
+              color: '#374151',
+              fontSize: 13,
+              fontWeight: 500,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              textDecoration: 'none',
+            }}
+          >
+            <Server size={14} color="#3b82f6" /> Fleet
           </Link>
           <button
             onClick={() => setIsAddDepOpen(true)}

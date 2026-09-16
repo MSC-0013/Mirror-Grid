@@ -1,0 +1,28 @@
+{
+  "name": "@mirrorgrid/container-runtime",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./adapter": "./dist/adapter.js",
+    "./hybrid": "./dist/hybrid-bridge.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@mirrorgrid/domain": "*",
+    "@mirrorgrid/reliability": "*",
+    "@mirrorgrid/runtime-agent": "*",
+    "@mirrorgrid/synthetic-service": "*"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.9",
+    "tsx": "4.19.3",
+    "typescript": "5.9.3"
+  }
+}

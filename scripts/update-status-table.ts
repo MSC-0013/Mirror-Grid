@@ -47,8 +47,8 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M3',
     name: 'Container runtime peer',
     gate: 'verify:m3',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence: '5/5 gate; synthetic microservice; W3C trace context; toxiproxy; conformance suite passed',
   },
   {
     id: 'M4',

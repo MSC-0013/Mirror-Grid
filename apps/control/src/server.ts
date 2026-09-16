@@ -13,6 +13,7 @@ import { workloadsRoutes } from './modules/workloads/index.js';
 import { graphRoutes } from './modules/graph/index.js';
 import { faultsRoutes, chaosRoutes } from './modules/faults/index.js';
 import { breakersRoutes } from './modules/breakers/index.js';
+import { runtimeRoutes } from './modules/runtime/index.js';
 
 export function buildServer(): FastifyInstance {
   const logger = createLogger({ name: 'control-plane' });
@@ -54,6 +55,7 @@ export function buildServer(): FastifyInstance {
   app.register(faultsRoutes, { prefix: '/api/v1/worlds/:worldId/faults' });
   app.register(chaosRoutes, { prefix: '/api/v1/worlds/:worldId/chaos' });
   app.register(breakersRoutes, { prefix: '/api/v1/worlds/:worldId/breakers' });
+  app.register(runtimeRoutes, { prefix: '/api/v1/worlds/:worldId/runtime' });
 
   return app;
 }
