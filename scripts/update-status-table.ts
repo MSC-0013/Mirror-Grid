@@ -54,8 +54,8 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M4',
     name: 'Reliability + fault engine',
     gate: 'verify:m4',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence: '5/5 gate; pure core/shell; zero Date.now; safety bounds verified',
   },
   {
     id: 'M5',

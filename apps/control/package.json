@@ -18,6 +18,7 @@
     "@mirrorgrid/domain": "*",
     "@mirrorgrid/logging": "*",
     "@mirrorgrid/platform": "*",
+    "@mirrorgrid/reliability": "*",
     "@mirrorgrid/validation": "*",
     "argon2": "0.45.1",
     "drizzle-orm": "0.45.2",

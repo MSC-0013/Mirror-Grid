@@ -16,6 +16,8 @@ import {
   Square,
   Gauge,
   Zap,
+  ShieldAlert,
+  Flame,
 } from 'lucide-react';
 import { TopologyCanvas } from '@/components/topology/topology-canvas';
 import {
@@ -411,6 +413,42 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
               <Play size={14} /> Run Simulation
             </button>
           )}
+          <Link
+            href={`/worlds/${worldId}/breakers`}
+            style={{
+              padding: '7px 12px',
+              borderRadius: 6,
+              border: '1px solid var(--color-border)',
+              backgroundColor: '#FFFFFF',
+              color: '#374151',
+              fontSize: 13,
+              fontWeight: 500,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              textDecoration: 'none',
+            }}
+          >
+            <ShieldAlert size={14} color="#f59e0b" /> Breakers
+          </Link>
+          <Link
+            href={`/worlds/${worldId}/faults`}
+            style={{
+              padding: '7px 12px',
+              borderRadius: 6,
+              border: '1px solid var(--color-border)',
+              backgroundColor: '#FFFFFF',
+              color: '#374151',
+              fontSize: 13,
+              fontWeight: 500,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              textDecoration: 'none',
+            }}
+          >
+            <Flame size={14} color="#ef4444" /> Chaos Faults
+          </Link>
           <button
             onClick={() => setIsAddDepOpen(true)}
             style={{
