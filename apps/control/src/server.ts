@@ -26,6 +26,7 @@ import {
   getActivityProjector,
 } from './modules/events/index.js';
 import { tracesRoutes, metricsRoutes } from './modules/observability/index.js';
+import { sloRoutes, rcaRoutes } from './modules/sre/index.js';
 
 // Polyfill BigInt serialization for Fastify JSON responses
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -87,6 +88,8 @@ export function buildServer(): FastifyInstance {
   app.register(breakersRoutes, { prefix: '/api/v1/worlds/:worldId/breakers' });
   app.register(runtimeRoutes, { prefix: '/api/v1/worlds/:worldId/runtime' });
   app.register(experimentRoutes, { prefix: '/api/v1/worlds/:worldId/experiments' });
+  app.register(sloRoutes, { prefix: '/api/v1' });
+  app.register(rcaRoutes, { prefix: '/api/v1' });
 
   // Lifecycle hooks for WebSockets and background event daemons
   app.addHook('onReady', async () => {

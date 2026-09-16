@@ -8,3 +8,4 @@ export * from './security.js';
 export * from './jobs.js';
 export * from './events.js';
 export * from './observability.js';
+export * from './sre.js';

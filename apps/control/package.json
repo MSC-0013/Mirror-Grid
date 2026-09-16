@@ -25,6 +25,7 @@
     "@mirrorgrid/platform": "*",
     "@mirrorgrid/reliability": "*",
     "@mirrorgrid/security": "*",
+    "@mirrorgrid/sre": "*",
     "@mirrorgrid/validation": "*",
     "argon2": "0.45.1",
     "drizzle-orm": "0.45.2",

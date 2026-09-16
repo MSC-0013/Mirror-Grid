@@ -102,8 +102,9 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M10',
     name: 'Reliability engine: SLO, RCA, reports',
     gate: 'verify:reliability',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence:
+      '5/5 gate; Google SRE multi-window burn rate (14.4x, 6.0x); dual-window suppression; graph RCA (>90% confidence); SQLite WAL persistence; executive report synthesis',
   },
   {
     id: 'M11',
