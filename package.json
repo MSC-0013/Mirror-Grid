@@ -29,6 +29,7 @@
     "verify:events": "node --import tsx tests/gates/verify-events.ts",
     "verify:observability": "node --import tsx tests/gates/verify-observability.ts",
     "verify:reliability": "node --import tsx tests/gates/verify-reliability.ts",
+    "verify:recovery": "node --import tsx tests/gates/verify-recovery.ts",
     "status:update": "node --import tsx scripts/update-status-table.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\""

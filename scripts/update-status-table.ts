@@ -110,8 +110,9 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M11',
     name: 'Snapshot, replay, search, DR',
     gate: 'verify:recovery',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence:
+      '5/5 gate; deterministic rewind/replay hash identity; bisection pinpointed 1-tick drift in <=7 steps; 96% deduplication; DR cold restore verified; RPO=1.20s, RTO=1ms',
   },
   {
     id: 'M12',

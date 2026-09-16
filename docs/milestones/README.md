@@ -40,7 +40,7 @@ and realized in M02.
 | M8 | Event platform: outbox, Kafka, CQRS | `verify:events` | ✅ **PASSED** | 5/5 gate; atomic outbox rollback; per-world monotonic sequencing; idempotent deduplication; CQRS read projection; sub-50ms WebSockets |
 | M9 | Observability | `verify:observability` | ✅ **PASSED** | 5/5 gate; W3C traceparent 4-hop propagation; Prometheus /metrics format; correlated structured logging; trace waterfall critical path; standalone SQLite spans |
 | M10 | Reliability engine: SLO, RCA, reports | `verify:reliability` | ✅ **PASSED** | 5/5 gate; Google SRE multi-window burn rate (14.4x, 6.0x); dual-window suppression; graph RCA (>90% confidence); SQLite WAL persistence; executive report synthesis |
-| M11 | Snapshot, replay, search, DR | `verify:recovery` | ⬜ NOT STARTED | — |
+| M11 | Snapshot, replay, search, DR | `verify:recovery` | ✅ **PASSED** | 5/5 gate; deterministic rewind/replay hash identity; bisection pinpointed 1-tick drift in <=7 steps; 96% deduplication; DR cold restore verified; RPO=1.20s, RTO=1ms |
 | M12 | Containers, Kubernetes, HA | `verify:ha` | ⬜ NOT STARTED | — |
 | M13 | Performance, hardening, campaign | `verify:campaign` | ⬜ NOT STARTED | — |
 <!-- STATUS_TABLE_END -->

@@ -24,6 +24,7 @@
     "@mirrorgrid/observability": "*",
     "@mirrorgrid/platform": "*",
     "@mirrorgrid/reliability": "*",
+    "@mirrorgrid/recovery": "*",
     "@mirrorgrid/security": "*",
     "@mirrorgrid/sre": "*",
     "@mirrorgrid/validation": "*",

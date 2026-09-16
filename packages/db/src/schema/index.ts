@@ -9,3 +9,4 @@ export * from './jobs.js';
 export * from './events.js';
 export * from './observability.js';
 export * from './sre.js';
+export * from './recovery.js';
