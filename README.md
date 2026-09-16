@@ -29,7 +29,7 @@ Latency, queue growth, saturation, retry amplification, and cascading failure fa
 | M4 | Reliability + fault engine | `verify:m4` | ✅ **PASSED** | 5/5 gate; pure core/shell; zero Date.now; safety bounds verified |
 | M5 | Experiment engine + flagship | `verify:flagship` | ✅ **PASSED** | 5/5 gate; flagship scenario; MTTD/MTTR verified; retry budget <= 1.15x; Tier 1 / v0.1 certified |
 | M6 | Security: RBAC, audit, rate limiting | `verify:m6` | ✅ **PASSED** | 6/6 gate; immediate session revocation; RBAC matrix; SHA-256 tamper detection; RFC 6585 rate limiting |
-| M7 | Async platform: jobs, leases, DLQ | `verify:concurrency` | ⬜ NOT STARTED | — |
+| M7 | Async platform: jobs, leases, DLQ | `verify:concurrency` | ✅ **PASSED** | 6/6 gate; mutual exclusion; orphan lease recovery; poison pill DLQ transition; redrive; 500 jobs processed concurrently |
 | M8 | Event platform: outbox, Kafka, CQRS | `verify:events` | ⬜ NOT STARTED | — |
 | M9 | Observability | `verify:observability` | ⬜ NOT STARTED | — |
 | M10 | Reliability engine: SLO, RCA, reports | `verify:reliability` | ⬜ NOT STARTED | — |

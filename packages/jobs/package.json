@@ -1,0 +1,29 @@
+{
+  "name": "@mirrorgrid/jobs",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx tests/unit/run-all.ts",
+    "test:unit": "node --import tsx tests/unit/run-all.ts"
+  },
+  "dependencies": {
+    "@mirrorgrid/config": "*",
+    "@mirrorgrid/db": "*",
+    "@mirrorgrid/logging": "*",
+    "@mirrorgrid/platform": "*",
+    "drizzle-orm": "0.45.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.13.9",
+    "tsx": "4.19.3",
+    "typescript": "5.9.3"
+  }
+}

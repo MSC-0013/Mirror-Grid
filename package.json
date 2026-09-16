@@ -25,6 +25,7 @@
     "verify:m3": "node --import tsx tests/gates/verify-m3.ts",
     "verify:flagship": "node --import tsx tests/gates/verify-flagship.ts",
     "verify:m6": "node --import tsx tests/gates/verify-m6.ts",
+    "verify:concurrency": "node --import tsx tests/gates/verify-concurrency.ts",
     "status:update": "node --import tsx scripts/update-status-table.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\""

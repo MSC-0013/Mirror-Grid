@@ -78,8 +78,9 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M7',
     name: 'Async platform: jobs, leases, DLQ',
     gate: 'verify:concurrency',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence:
+      '6/6 gate; mutual exclusion; orphan lease recovery; poison pill DLQ transition; redrive; 500 jobs processed concurrently',
   },
   {
     id: 'M8',

@@ -18,6 +18,7 @@ import { experimentRoutes } from './modules/experiments/index.js';
 import { securityPlugin } from './plugins/security.plugin.js';
 import { auditRoutes } from './modules/audit/audit.routes.js';
 import { userRoutes } from './modules/users/user.routes.js';
+import { jobsRoutes } from './modules/jobs/jobs.routes.js';
 
 // Polyfill BigInt serialization for Fastify JSON responses
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -65,6 +66,7 @@ export function buildServer(): FastifyInstance {
   app.register(authRoutes, { prefix: '/api/v1/auth' });
   app.register(userRoutes, { prefix: '/api/v1/users' });
   app.register(auditRoutes, { prefix: '/api/v1/audit-logs' });
+  app.register(jobsRoutes, { prefix: '/api/v1/jobs' });
   app.register(worldsRoutes, { prefix: '/api/v1/worlds' });
   app.register(servicesRoutes, { prefix: '/api/v1/worlds/:worldId/services' });
   app.register(dependenciesRoutes, { prefix: '/api/v1/worlds/:worldId/dependencies' });

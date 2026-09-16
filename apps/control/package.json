@@ -18,6 +18,7 @@
     "@mirrorgrid/db": "*",
     "@mirrorgrid/domain": "*",
     "@mirrorgrid/experiments": "*",
+    "@mirrorgrid/jobs": "*",
     "@mirrorgrid/logging": "*",
     "@mirrorgrid/platform": "*",
     "@mirrorgrid/reliability": "*",
