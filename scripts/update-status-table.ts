@@ -70,8 +70,9 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M6',
     name: 'Security: RBAC, audit, rate limiting',
     gate: 'verify:m6',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence:
+      '6/6 gate; immediate session revocation; RBAC matrix; SHA-256 tamper detection; RFC 6585 rate limiting',
   },
   {
     id: 'M7',

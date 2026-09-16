@@ -1,6 +1,7 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { FaultService } from './fault.service.js';
 import { createFaultSpecSchema, injectFaultSchema, emergencyAbortSchema } from './fault.schema.js';
+import { auditLogger } from '@mirrorgrid/security';
 
 export class FaultController {
   private readonly service: FaultService;
@@ -38,7 +39,29 @@ export class FaultController {
     const { worldId, faultId } = req.params;
     const body = injectFaultSchema.parse(req.body ?? {});
     const result = await this.service.injectFault(worldId, faultId, body);
-    return reply.status(201).send({ data: result });
+
+    void auditLogger.log({
+      principal: req.principal ?? undefined,
+      action: 'FAULT_INJECTED',
+      resourceType: 'FAULT',
+      resourceId: faultId,
+      diff: {
+        worldId,
+        executionId: result.id,
+        faultSpecId: result.faultSpecId,
+      },
+      clientIp: (req.headers['x-forwarded-for'] as string) || req.ip || '127.0.0.1',
+    });
+
+    const serialized = {
+      ...result,
+      scheduledStartMicros: result.scheduledStartMicros.toString(),
+      scheduledDurationMicros: result.scheduledDurationMicros.toString(),
+      actualStartMicros: result.actualStartMicros ? result.actualStartMicros.toString() : null,
+      actualEndMicros: result.actualEndMicros ? result.actualEndMicros.toString() : null,
+    };
+
+    return reply.status(201).send({ data: serialized });
   }
 
   public async disarm(
@@ -47,13 +70,47 @@ export class FaultController {
   ) {
     const { worldId, executionId } = req.params;
     const result = await this.service.disarmFault(worldId, executionId);
-    return reply.send({ data: result });
+
+    void auditLogger.log({
+      principal: req.principal ?? undefined,
+      action: 'FAULT_DISARMED',
+      resourceType: 'FAULT',
+      resourceId: executionId,
+      diff: {
+        worldId,
+        executionId,
+      },
+      clientIp: (req.headers['x-forwarded-for'] as string) || req.ip || '127.0.0.1',
+    });
+
+    const serialized = {
+      ...result,
+      scheduledStartMicros: result.scheduledStartMicros.toString(),
+      scheduledDurationMicros: result.scheduledDurationMicros.toString(),
+      actualStartMicros: result.actualStartMicros ? result.actualStartMicros.toString() : null,
+      actualEndMicros: result.actualEndMicros ? result.actualEndMicros.toString() : null,
+    };
+
+    return reply.send({ data: serialized });
   }
 
   public async abort(req: FastifyRequest<{ Params: { worldId: string } }>, reply: FastifyReply) {
     const { worldId } = req.params;
     const body = emergencyAbortSchema.parse(req.body ?? {});
     const result = await this.service.emergencyAbort(worldId, body.reason);
+
+    void auditLogger.log({
+      principal: req.principal ?? undefined,
+      action: 'CHAOS_ABORT',
+      resourceType: 'CHAOS',
+      resourceId: worldId,
+      diff: {
+        reason: body.reason,
+        abortedCount: result.abortedCount,
+      },
+      clientIp: (req.headers['x-forwarded-for'] as string) || req.ip || '127.0.0.1',
+    });
+
     return reply.send({ data: result });
   }
 

@@ -9,4 +9,10 @@ export async function authRoutes(fastify: FastifyInstance) {
   fastify.post('/logout', controller.logout.bind(controller));
   fastify.get('/me', controller.me.bind(controller));
   fastify.post('/validate-session', controller.validateToken.bind(controller));
+  fastify.post('/sessions/:sessionId/revoke', controller.revokeSession.bind(controller));
+  fastify.post(
+    '/sessions/revoke-all',
+    { preHandler: [fastify.requireAuth] },
+    controller.revokeAllSessions.bind(controller),
+  );
 }

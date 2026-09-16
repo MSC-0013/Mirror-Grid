@@ -102,4 +102,18 @@ export class AuthController {
       user: validated.user,
     });
   }
+
+  public async revokeSession(req: FastifyRequest, reply: FastifyReply) {
+    const params = req.params as { sessionId: string };
+    await this.service.revokeSession(params.sessionId);
+    return reply.status(200).send({ revoked: true });
+  }
+
+  public async revokeAllSessions(req: FastifyRequest, reply: FastifyReply) {
+    if (!req.principal) {
+      throw AppError.unauthorized();
+    }
+    await this.service.revokeAllSessions(req.principal.id, req.principal.sessionId);
+    return reply.status(200).send({ revoked: true });
+  }
 }

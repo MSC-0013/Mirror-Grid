@@ -20,24 +20,22 @@ Latency, queue growth, saturation, retry amplification, and cascading failure fa
 > A milestone is DONE when its `npm run verify:*` gate runs green, not when its files exist.
 
 <!-- STATUS_TABLE_START -->
-
-| #   | Milestone                             | Gate                   | Status         | Evidence                                                                                        |
-| --- | ------------------------------------- | ---------------------- | -------------- | ----------------------------------------------------------------------------------------------- |
-| M0  | Foundation + walking skeleton         | `verify:m0`            | ✅ **PASSED**  | Committed f930542; 9/9 gate                                                                     |
-| M1  | Domain model + topology               | `verify:m1`            | ✅ **PASSED**  | Committed b3e8e3f; 8/8 gate; DAG verified                                                       |
-| M2  | Deterministic logical runtime         | `verify:determinism`   | ✅ **PASSED**  | Committed 61ef299; 8/8 gate; 46/46 unit tests; L error 0.00%                                    |
-| M3  | Container runtime peer                | `verify:m3`            | ✅ **PASSED**  | 5/5 gate; synthetic microservice; W3C trace context; toxiproxy; conformance suite passed        |
-| M4  | Reliability + fault engine            | `verify:m4`            | ✅ **PASSED**  | 5/5 gate; pure core/shell; zero Date.now; safety bounds verified                                |
-| M5  | Experiment engine + flagship          | `verify:flagship`      | ✅ **PASSED**  | 5/5 gate; flagship scenario; MTTD/MTTR verified; retry budget <= 1.15x; Tier 1 / v0.1 certified |
-| M6  | Security: RBAC, audit, rate limiting  | `verify:m6`            | ⬜ NOT STARTED | —                                                                                               |
-| M7  | Async platform: jobs, leases, DLQ     | `verify:concurrency`   | ⬜ NOT STARTED | —                                                                                               |
-| M8  | Event platform: outbox, Kafka, CQRS   | `verify:events`        | ⬜ NOT STARTED | —                                                                                               |
-| M9  | Observability                         | `verify:observability` | ⬜ NOT STARTED | —                                                                                               |
-| M10 | Reliability engine: SLO, RCA, reports | `verify:reliability`   | ⬜ NOT STARTED | —                                                                                               |
-| M11 | Snapshot, replay, search, DR          | `verify:recovery`      | ⬜ NOT STARTED | —                                                                                               |
-| M12 | Containers, Kubernetes, HA            | `verify:ha`            | ⬜ NOT STARTED | —                                                                                               |
-| M13 | Performance, hardening, campaign      | `verify:campaign`      | ⬜ NOT STARTED | —                                                                                               |
-
+| # | Milestone | Gate | Status | Evidence |
+|---|---|---|---|---|
+| M0 | Foundation + walking skeleton | `verify:m0` | ✅ **PASSED** | Committed f930542; 9/9 gate |
+| M1 | Domain model + topology | `verify:m1` | ✅ **PASSED** | Committed b3e8e3f; 8/8 gate; DAG verified |
+| M2 | Deterministic logical runtime | `verify:determinism` | ✅ **PASSED** | Committed 61ef299; 8/8 gate; 46/46 unit tests; L error 0.00% |
+| M3 | Container runtime peer | `verify:m3` | ✅ **PASSED** | 5/5 gate; synthetic microservice; W3C trace context; toxiproxy; conformance suite passed |
+| M4 | Reliability + fault engine | `verify:m4` | ✅ **PASSED** | 5/5 gate; pure core/shell; zero Date.now; safety bounds verified |
+| M5 | Experiment engine + flagship | `verify:flagship` | ✅ **PASSED** | 5/5 gate; flagship scenario; MTTD/MTTR verified; retry budget <= 1.15x; Tier 1 / v0.1 certified |
+| M6 | Security: RBAC, audit, rate limiting | `verify:m6` | ✅ **PASSED** | 6/6 gate; immediate session revocation; RBAC matrix; SHA-256 tamper detection; RFC 6585 rate limiting |
+| M7 | Async platform: jobs, leases, DLQ | `verify:concurrency` | ⬜ NOT STARTED | — |
+| M8 | Event platform: outbox, Kafka, CQRS | `verify:events` | ⬜ NOT STARTED | — |
+| M9 | Observability | `verify:observability` | ⬜ NOT STARTED | — |
+| M10 | Reliability engine: SLO, RCA, reports | `verify:reliability` | ⬜ NOT STARTED | — |
+| M11 | Snapshot, replay, search, DR | `verify:recovery` | ⬜ NOT STARTED | — |
+| M12 | Containers, Kubernetes, HA | `verify:ha` | ⬜ NOT STARTED | — |
+| M13 | Performance, hardening, campaign | `verify:campaign` | ⬜ NOT STARTED | — |
 <!-- STATUS_TABLE_END -->
 
 ---

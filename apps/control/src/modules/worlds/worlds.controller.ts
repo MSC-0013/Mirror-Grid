@@ -4,6 +4,7 @@ import { paginationQuerySchema, paginatedResult } from '@mirrorgrid/validation';
 import { WorldsService } from './worlds.service.js';
 import { createWorldSchema, updateWorldSchema, worldParamSchema } from './worlds.schema.js';
 import { AuthService } from '../auth/auth.service.js';
+import { auditLogger } from '@mirrorgrid/security';
 
 export class WorldsController {
   constructor(
@@ -12,6 +13,10 @@ export class WorldsController {
   ) {}
 
   private async getAuthContext(req: FastifyRequest) {
+    if (req.principal && req.principal.organizationId) {
+      return { organizationId: req.principal.organizationId, userId: req.principal.id };
+    }
+
     // 1. Check if headers were forwarded by Gateway
     const headerOrgId = req.headers['x-org-id'] as string | undefined;
     const headerUserId = req.headers['x-user-id'] as string | undefined;
@@ -78,6 +83,16 @@ export class WorldsController {
     }
 
     const world = await this.service.createWorld(organizationId, userId, parse.data);
+
+    void auditLogger.log({
+      principal: req.principal ?? { id: userId },
+      action: 'WORLD_CREATED',
+      resourceType: 'WORLD',
+      resourceId: world.id,
+      diff: { after: { name: world.name, runtimeMode: world.runtimeMode } },
+      clientIp: req.ip || '127.0.0.1',
+    });
+
     return reply.status(201).send({
       data: {
         ...world,
@@ -104,10 +119,20 @@ export class WorldsController {
   }
 
   public async delete(req: FastifyRequest, reply: FastifyReply) {
-    const { organizationId } = await this.getAuthContext(req);
+    const { organizationId, userId } = await this.getAuthContext(req);
     const params = worldParamSchema.parse(req.params);
 
     await this.service.deleteWorld(organizationId, params.id);
+
+    void auditLogger.log({
+      principal: req.principal ?? { id: userId },
+      action: 'WORLD_DELETED',
+      resourceType: 'WORLD',
+      resourceId: params.id,
+      diff: { before: { id: params.id } },
+      clientIp: req.ip || '127.0.0.1',
+    });
+
     return reply.status(204).send();
   }
 }

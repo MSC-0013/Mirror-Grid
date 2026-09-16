@@ -15,6 +15,18 @@ import { faultsRoutes, chaosRoutes } from './modules/faults/index.js';
 import { breakersRoutes } from './modules/breakers/index.js';
 import { runtimeRoutes } from './modules/runtime/index.js';
 import { experimentRoutes } from './modules/experiments/index.js';
+import { securityPlugin } from './plugins/security.plugin.js';
+import { auditRoutes } from './modules/audit/audit.routes.js';
+import { userRoutes } from './modules/users/user.routes.js';
+
+// Polyfill BigInt serialization for Fastify JSON responses
+/* eslint-disable @typescript-eslint/no-explicit-any */
+if (!(BigInt.prototype as any).toJSON) {
+  (BigInt.prototype as any).toJSON = function () {
+    return this.toString();
+  };
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 export function buildServer(): FastifyInstance {
   const logger = createLogger({ name: 'control-plane' });
@@ -26,6 +38,9 @@ export function buildServer(): FastifyInstance {
   app.register(fastifyCookie, {
     secret: config.SESSION_SECRET,
   });
+
+  // Security Plugin: Session auth, RBAC guards, adaptive rate limiting
+  app.register(securityPlugin);
 
   // Standardized Error Handler
   app.setErrorHandler((error, req, reply) => {
@@ -48,6 +63,8 @@ export function buildServer(): FastifyInstance {
   // Register Modules
   app.register(healthRoutes, { prefix: '/health' });
   app.register(authRoutes, { prefix: '/api/v1/auth' });
+  app.register(userRoutes, { prefix: '/api/v1/users' });
+  app.register(auditRoutes, { prefix: '/api/v1/audit-logs' });
   app.register(worldsRoutes, { prefix: '/api/v1/worlds' });
   app.register(servicesRoutes, { prefix: '/api/v1/worlds/:worldId/services' });
   app.register(dependenciesRoutes, { prefix: '/api/v1/worlds/:worldId/dependencies' });

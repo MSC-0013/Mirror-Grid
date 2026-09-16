@@ -1,6 +1,8 @@
-import { createHash, randomBytes } from 'node:crypto';
-import * as argon2 from 'argon2';
+import { randomBytes } from 'node:crypto';
+import { db } from '@mirrorgrid/db';
+import { userRoles } from '@mirrorgrid/db/schema';
 import { AppError } from '@mirrorgrid/platform';
+import { hashPassword, verifyPassword, sessionStore } from '@mirrorgrid/security';
 import { AuthRepository } from './auth.repository.js';
 import type { LoginInput, SignupInput } from './auth.schema.js';
 
@@ -8,7 +10,7 @@ export class AuthService {
   constructor(private readonly repo: AuthRepository = new AuthRepository()) {}
 
   public hashToken(token: string): string {
-    return createHash('sha256').update(token).digest('hex');
+    return sessionStore.hashToken(token);
   }
 
   public async signup(input: SignupInput) {
@@ -17,11 +19,7 @@ export class AuthService {
       throw AppError.conflict(`User with email '${input.email}' already exists`);
     }
 
-    const passwordHash = await argon2.hash(input.password, {
-      type: argon2.argon2id,
-      memoryCost: 65536,
-      timeCost: 3,
-    });
+    const passwordHash = await hashPassword(input.password);
 
     const user = await this.repo.createUser({
       email: input.email,
@@ -48,6 +46,16 @@ export class AuthService {
       userId: user.id,
     });
 
+    // Assign initial ADMIN role to organization creator
+    try {
+      await db.insert(userRoles).values({
+        userId: user.id,
+        roleId: 'ADMIN',
+      });
+    } catch {
+      // Ignore if already inserted
+    }
+
     return { user, organization: org };
   }
 
@@ -57,7 +65,7 @@ export class AuthService {
       throw AppError.unauthorized('Invalid email or password');
     }
 
-    const valid = await argon2.verify(user.passwordHash, input.password);
+    const valid = await verifyPassword(user.passwordHash, input.password);
     if (!valid) {
       throw AppError.unauthorized('Invalid email or password');
     }
@@ -67,17 +75,8 @@ export class AuthService {
       throw AppError.internal('User does not belong to any organization');
     }
 
-    // Generate 32-byte cryptographically secure session token
-    const plaintextToken = randomBytes(32).toString('hex');
-    const tokenHash = this.hashToken(plaintextToken);
-
-    // 7 days expiration
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-
-    await this.repo.createSession({
+    const sessionResult = await sessionStore.createSession({
       userId: user.id,
-      tokenHash,
-      expiresAt,
       ipAddress: metadata?.ip,
       userAgent: metadata?.userAgent,
     });
@@ -89,36 +88,47 @@ export class AuthService {
         displayName: user.displayName,
         organizationId: orgInfo.organizationId,
         organizationName: orgInfo.name,
+        roles: sessionResult.principal.roles,
+        permissions: Array.from(sessionResult.principal.permissions),
       },
-      token: plaintextToken,
-      expiresAt,
+      sessionId: sessionResult.principal.sessionId,
+      token: sessionResult.token,
+      expiresAt: sessionResult.expiresAt,
     };
   }
 
   public async validateSession(token: string) {
-    const tokenHash = this.hashToken(token);
-    const active = await this.repo.findActiveSession(tokenHash);
-    if (!active) {
+    const principal = await sessionStore.validateToken(token);
+    if (!principal) {
       return null;
     }
 
-    const orgInfo = await this.repo.getUserOrganization(active.user.id);
-    // Touch session last_seen asynchronously
-    void this.repo.touchSession(tokenHash).catch(() => {});
+    const orgInfo = await this.repo.getUserOrganization(principal.id);
 
     return {
       user: {
-        id: active.user.id,
-        email: active.user.email,
-        displayName: active.user.displayName,
+        id: principal.id,
+        email: principal.email,
+        displayName: principal.displayName,
         organizationId: orgInfo?.organizationId,
+        roles: principal.roles,
+        permissions: Array.from(principal.permissions),
       },
-      session: active.session,
+      sessionId: principal.sessionId,
     };
   }
 
   public async logout(token: string) {
+    await sessionStore.revokeToken(token);
     const tokenHash = this.hashToken(token);
     await this.repo.invalidateSession(tokenHash);
+  }
+
+  public async revokeSession(sessionId: string) {
+    await sessionStore.revokeSessionById(sessionId);
+  }
+
+  public async revokeAllSessions(userId: string, exceptSessionId?: string) {
+    await sessionStore.revokeAllUserSessions(userId, exceptSessionId);
   }
 }
