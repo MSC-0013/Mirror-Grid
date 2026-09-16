@@ -35,6 +35,14 @@ export const experimentRuns = pgTable(
       .notNull()
       .default('CREATED')
       .$type<'CREATED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'>(),
+    experimentId: uuid('experiment_id'),
+    runNumber: integer('run_number').notNull().default(1),
+    currentPhase: text('current_phase').notNull().default('WARMUP'),
+    mttdMicros: bigint('mttd_micros', { mode: 'bigint' }),
+    mttrMicros: bigint('mttr_micros', { mode: 'bigint' }),
+    peakErrorRatePpm: integer('peak_error_rate_ppm').default(0),
+    peakP99Micros: bigint('peak_p99_micros', { mode: 'bigint' }).default(0n),
+    resultSummary: jsonb('result_summary').default({}),
     startedAt: timestamp('started_at', { withTimezone: true }),
     completedAt: timestamp('completed_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),

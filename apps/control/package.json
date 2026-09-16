@@ -17,6 +17,7 @@
     "@mirrorgrid/container-runtime": "*",
     "@mirrorgrid/db": "*",
     "@mirrorgrid/domain": "*",
+    "@mirrorgrid/experiments": "*",
     "@mirrorgrid/logging": "*",
     "@mirrorgrid/platform": "*",
     "@mirrorgrid/reliability": "*",

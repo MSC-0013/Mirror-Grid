@@ -19,6 +19,7 @@ import {
   ShieldAlert,
   Flame,
   Server,
+  FlaskConical,
 } from 'lucide-react';
 import { TopologyCanvas } from '@/components/topology/topology-canvas';
 import {
@@ -467,6 +468,24 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
             }}
           >
             <Server size={14} color="#3b82f6" /> Fleet
+          </Link>
+          <Link
+            href={`/worlds/${worldId}/experiments`}
+            style={{
+              padding: '7px 12px',
+              borderRadius: 6,
+              border: '1px solid var(--color-border)',
+              backgroundColor: '#FFFFFF',
+              color: '#374151',
+              fontSize: 13,
+              fontWeight: 500,
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              textDecoration: 'none',
+            }}
+          >
+            <FlaskConical size={14} color="#10b981" /> Experiments
           </Link>
           <button
             onClick={() => setIsAddDepOpen(true)}

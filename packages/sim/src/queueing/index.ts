@@ -12,6 +12,9 @@ export {
   type RequestOutcome,
   type RequestStatus,
   type EdgeSpec,
+  type EdgeInterceptor,
+  type EdgeInterceptorContext,
+  type EdgeDispatchFn,
   type SchedulerServiceSpec,
   type SchedulerOptions,
 } from './scheduler.js';

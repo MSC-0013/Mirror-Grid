@@ -15,10 +15,31 @@ export interface RequestOutcome {
   readonly latencyUs: bigint;
 }
 
+export interface EdgeInterceptorContext {
+  readonly sourceId: string;
+  readonly targetId: string;
+  readonly nowUs: bigint;
+  readonly deadlineUs: bigint;
+  readonly request: SimRequest;
+  readonly clock: VirtualClock;
+}
+
+export type EdgeDispatchFn = (
+  effectiveDeadlineUs: bigint,
+  onSettle: (status: RequestStatus) => void,
+) => void;
+
+export type EdgeInterceptor = (
+  context: EdgeInterceptorContext,
+  dispatch: EdgeDispatchFn,
+  onSettle: (status: RequestStatus) => void,
+) => void;
+
 export interface EdgeSpec {
   readonly sourceId: string;
   readonly targetId: string;
   readonly timeoutMs: number;
+  readonly interceptor?: EdgeInterceptor;
 }
 
 export interface SchedulerServiceSpec {
@@ -226,7 +247,11 @@ export class SimScheduler {
       },
     });
 
-    this.invoke(edge.targetId, childDeadlineUs, request.depth + 1, (status) => {
+    const defaultDispatch: EdgeDispatchFn = (childDeadlineUs, onDispatched) => {
+      this.invoke(edge.targetId, childDeadlineUs, request.depth + 1, onDispatched);
+    };
+
+    const handleChildResult = (status: RequestStatus) => {
       if (settled.value) return;
       settled.value = true;
       if (status === 'SUCCESS') {
@@ -234,7 +259,24 @@ export class SimScheduler {
       } else {
         this.finish(service, request, 'DEPENDENCY_FAILED', onSettle);
       }
-    });
+    };
+
+    if (edge.interceptor) {
+      edge.interceptor(
+        {
+          sourceId: edge.sourceId,
+          targetId: edge.targetId,
+          nowUs,
+          deadlineUs: childDeadlineUs,
+          request,
+          clock: this.clock,
+        },
+        defaultDispatch,
+        handleChildResult,
+      );
+    } else {
+      defaultDispatch(childDeadlineUs, handleChildResult);
+    }
   }
 
   /** Release the slot — only now, after the whole span — and promote the next queued request. */
