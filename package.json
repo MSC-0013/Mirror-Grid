@@ -19,6 +19,7 @@
     "db:migrate": "turbo run db:migrate --filter=@mirrorgrid/db",
     "verify:m0": "node --import tsx tests/gates/verify-m0.ts",
     "verify:m1": "node --import tsx tests/gates/verify-m1.ts",
+    "verify:determinism": "node --import tsx tests/gates/verify-determinism.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\""
   },

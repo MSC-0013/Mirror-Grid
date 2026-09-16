@@ -1,0 +1,30 @@
+{
+  "name": "@mirrorgrid/sim",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": "./dist/index.js",
+    "./clock": "./dist/clock/index.js",
+    "./rng": "./dist/rng/index.js",
+    "./queueing": "./dist/queueing/index.js",
+    "./metrics": "./dist/metrics/index.js",
+    "./hash": "./dist/hash/index.js",
+    "./workload": "./dist/workload/index.js",
+    "./icdf": "./dist/icdf/index.js",
+    "./engine": "./dist/engine/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx src/sim.test.ts"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@types/node": "22.13.9",
+    "tsx": "4.19.3",
+    "typescript": "5.9.3"
+  }
+}

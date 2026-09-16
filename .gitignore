@@ -42,3 +42,6 @@ Thumbs.db
 !.vscode/extensions.json
 *.sublime-workspace
 *.sublime-project
+
+# Local cluster data
+infrastructure/data/

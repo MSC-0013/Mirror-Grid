@@ -12,6 +12,10 @@ import {
   Clock,
   Layers,
   Activity,
+  Play,
+  Square,
+  Gauge,
+  Zap,
 } from 'lucide-react';
 import { TopologyCanvas } from '@/components/topology/topology-canvas';
 import { ServiceDrawer, type DrawerService, type DrawerDependency } from '@/components/topology/service-drawer';
@@ -59,6 +63,101 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
   const [depTimeout, setDepTimeout] = useState(5000);
   const [depCriticality, setDepCriticality] = useState('REQUIRED');
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Simulation State
+  const [simStatus, setSimStatus] = useState<'IDLE' | 'RUNNING' | 'COMPLETED'>('IDLE');
+  const [activeRunId, setActiveRunId] = useState<string | null>(null);
+  const [simMetrics, setSimMetrics] = useState<{
+    p95LatencyMs: number;
+    throughput: number;
+    errorRate: number;
+    queueDepth: number;
+    activeSlots: number;
+    stateHash?: string;
+  } | null>(null);
+
+  async function handleStartSimulation() {
+    try {
+      setSimStatus('RUNNING');
+      const res = await fetch(`http://localhost:4000/api/v1/simulation/runs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          worldId,
+          seed: 42,
+          runtimeMode: 'LOGICAL',
+          driver: 'FAST',
+          durationMs: 10000,
+          baseRate: 200,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok || !json.data) throw new Error(json.error?.message || 'Failed to create run');
+
+      const runId = json.data.runId;
+      setActiveRunId(runId);
+
+      await fetch(`http://localhost:4000/api/v1/simulation/runs/${runId}/start`, { method: 'POST' });
+    } catch (err) {
+      console.error('Failed to start simulation:', err);
+      setSimStatus('IDLE');
+    }
+  }
+
+  async function handleStopSimulation() {
+    if (!activeRunId) return;
+    try {
+      await fetch(`http://localhost:4000/api/v1/simulation/runs/${activeRunId}/stop`, { method: 'POST' });
+      setSimStatus('COMPLETED');
+    } catch (err) {
+      console.error('Failed to stop simulation:', err);
+    }
+  }
+
+  useEffect(() => {
+    if (simStatus !== 'RUNNING' || !activeRunId) return;
+
+    const interval = setInterval(async () => {
+      try {
+        const [statusRes, metricsRes] = await Promise.all([
+          fetch(`http://localhost:4000/api/v1/simulation/runs/${activeRunId}/status`),
+          fetch(`http://localhost:4000/api/v1/simulation/runs/${activeRunId}/metrics`),
+        ]);
+
+        if (statusRes.ok) {
+          const statusJson = await statusRes.json();
+          if (statusJson.data?.status === 'COMPLETED' || statusJson.data?.status === 'CANCELLED') {
+            setSimStatus('COMPLETED');
+            if (statusJson.data.finalStateHash) {
+              setSimMetrics((prev) => (prev ? { ...prev, stateHash: statusJson.data.finalStateHash } : null));
+            }
+          }
+        }
+
+        if (metricsRes.ok) {
+          const metricsJson = await metricsRes.json();
+          const buckets = metricsJson.data?.buckets || [];
+          if (buckets.length > 0) {
+            const latest = buckets[buckets.length - 1];
+            const totalReq = buckets.reduce((acc: number, b: any) => acc + (b.requestsTotal || 0), 0);
+            const totalFailed = buckets.reduce((acc: number, b: any) => acc + (b.requestsFailed || 0), 0);
+            setSimMetrics((prev) => ({
+              p95LatencyMs: (latest.p95LatencyUs || 0) / 1000,
+              throughput: Math.round(totalReq / buckets.length),
+              errorRate: totalReq > 0 ? totalFailed / totalReq : 0,
+              queueDepth: latest.queueDepth || 0,
+              activeSlots: latest.activeSlots || 0,
+              stateHash: prev?.stateHash,
+            }));
+          }
+        }
+      } catch (err) {
+        console.error('Simulation polling error:', err);
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, [simStatus, activeRunId]);
 
   async function loadData() {
     try {
@@ -233,6 +332,45 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {simStatus === 'RUNNING' ? (
+            <button
+              onClick={handleStopSimulation}
+              style={{
+                padding: '7px 12px',
+                borderRadius: 6,
+                border: '1px solid var(--color-error)',
+                backgroundColor: '#FEE2E2',
+                color: '#DC2626',
+                fontSize: 13,
+                fontWeight: 500,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+              }}
+            >
+              <Square size={14} /> Stop Simulation
+            </button>
+          ) : (
+            <button
+              onClick={handleStartSimulation}
+              style={{
+                padding: '7px 12px',
+                borderRadius: 6,
+                border: '1px solid #16A34A',
+                backgroundColor: '#DCFCE7',
+                color: '#16A34A',
+                fontSize: 13,
+                fontWeight: 500,
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                cursor: 'pointer',
+              }}
+            >
+              <Play size={14} /> Run Simulation
+            </button>
+          )}
           <button
             onClick={() => setIsAddDepOpen(true)}
             style={{
@@ -309,6 +447,101 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
           )}
         </div>
       </div>
+
+      {/* Live Simulation Metric Cards Strip (Spec §14) */}
+      {(simStatus !== 'IDLE' || simMetrics) && (
+        <div
+          style={{
+            padding: '10px 24px',
+            borderBottom: '1px solid var(--color-border)',
+            backgroundColor: '#FAFAFA',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 20,
+            fontSize: 12,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Gauge size={14} style={{ color: 'var(--color-primary)' }} />
+            <span style={{ color: 'var(--color-text-secondary)' }}>Sim:</span>
+            <span
+              style={{
+                padding: '2px 8px',
+                borderRadius: 4,
+                fontSize: 11,
+                fontWeight: 600,
+                backgroundColor:
+                  simStatus === 'RUNNING'
+                    ? '#DBEAFE'
+                    : simStatus === 'COMPLETED'
+                    ? '#DCFCE7'
+                    : 'var(--color-surface)',
+                color:
+                  simStatus === 'RUNNING'
+                    ? '#1D4ED8'
+                    : simStatus === 'COMPLETED'
+                    ? '#15803D'
+                    : 'inherit',
+              }}
+            >
+              {simStatus}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <Zap size={14} style={{ color: '#D97706' }} />
+            <span style={{ color: 'var(--color-text-secondary)' }}>P95:</span>
+            <strong>{simMetrics ? `${simMetrics.p95LatencyMs.toFixed(2)} ms` : '—'}</strong>
+            <span
+              style={{
+                fontSize: 10,
+                fontWeight: 600,
+                padding: '1px 5px',
+                borderRadius: 3,
+                backgroundColor: '#DCFCE7',
+                color: '#15803D',
+              }}
+            >
+              EXACT
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'var(--color-text-secondary)' }}>Rate:</span>
+            <strong>{simMetrics ? `${simMetrics.throughput} req/s` : '—'}</strong>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'var(--color-text-secondary)' }}>Errors:</span>
+            <strong
+              style={{
+                color:
+                  simMetrics && simMetrics.errorRate > 0.01 ? 'var(--color-error)' : 'inherit',
+              }}
+            >
+              {simMetrics ? `${(simMetrics.errorRate * 100).toFixed(2)}%` : '—'}
+            </strong>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ color: 'var(--color-text-secondary)' }}>Load:</span>
+            <strong>
+              {simMetrics
+                ? `${simMetrics.activeSlots} slots / ${simMetrics.queueDepth} queue`
+                : '—'}
+            </strong>
+          </div>
+
+          {simMetrics?.stateHash && (
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ color: 'var(--color-text-secondary)' }}>Hash:</span>
+              <code style={{ fontSize: 11, backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: 4 }}>
+                {simMetrics.stateHash.slice(0, 16)}…
+              </code>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Canvas Area */}
       <div style={{ flex: 1, position: 'relative', overflow: 'hidden' }}>

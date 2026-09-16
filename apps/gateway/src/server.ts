@@ -49,6 +49,14 @@ export async function buildGateway(): Promise<FastifyInstance> {
     return reply.status(500).send(fallback.toEnvelope(requestId));
   });
 
+  // Reverse Proxy to Simulation Service
+  await app.register(fastifyProxy, {
+    upstream: `http://127.0.0.1:${config.SIMULATION_PORT}`,
+    prefix: '/api/v1/simulation',
+    rewritePrefix: '/api/v1/simulation',
+    http2: false,
+  });
+
   // Reverse Proxy to Control Plane for all /api/v1/* calls
   await app.register(fastifyProxy, {
     upstream: `http://127.0.0.1:${config.CONTROL_PORT}`,

@@ -5,6 +5,7 @@ export const envSchema = z.object({
   DATABASE_URL: z.string().default('postgres://postgres:postgres@localhost:5432/mirrorgrid'),
   GATEWAY_PORT: z.coerce.number().int().positive().default(4000),
   CONTROL_PORT: z.coerce.number().int().positive().default(4001),
+  SIMULATION_PORT: z.coerce.number().int().positive().default(4002),
   WEB_PORT: z.coerce.number().int().positive().default(3000),
   SESSION_SECRET: z.string().min(32).default('dev_session_secret_change_in_production_min_32_chars_long'),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),

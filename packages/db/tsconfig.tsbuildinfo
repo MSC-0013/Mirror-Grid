@@ -1,1 +1,1 @@
-{"root":["./src/client.ts","./src/health.ts","./src/index.ts","./src/migrate.ts","./src/schema/core.ts","./src/schema/index.ts","./src/schema/topology.ts"],"version":"5.9.3"}
+{"root":["./src/client.ts","./src/health.ts","./src/index.ts","./src/migrate.ts","./src/schema/core.ts","./src/schema/index.ts","./src/schema/runtime.ts","./src/schema/topology.ts"],"version":"5.9.3"}
