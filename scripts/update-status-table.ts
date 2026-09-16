@@ -94,8 +94,9 @@ const MILESTONES: MilestoneStatus[] = [
     id: 'M9',
     name: 'Observability',
     gate: 'verify:observability',
-    status: 'NOT STARTED',
-    evidence: '—',
+    status: 'PASSED',
+    evidence:
+      '5/5 gate; W3C traceparent 4-hop propagation; Prometheus /metrics format; correlated structured logging; trace waterfall critical path; standalone SQLite spans',
   },
   {
     id: 'M10',

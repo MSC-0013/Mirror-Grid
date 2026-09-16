@@ -25,6 +25,7 @@ import {
   getOutboxRelay,
   getActivityProjector,
 } from './modules/events/index.js';
+import { tracesRoutes, metricsRoutes } from './modules/observability/index.js';
 
 // Polyfill BigInt serialization for Fastify JSON responses
 /* eslint-disable @typescript-eslint/no-explicit-any */
@@ -69,11 +70,13 @@ export function buildServer(): FastifyInstance {
 
   // Register Modules
   app.register(healthRoutes, { prefix: '/health' });
+  app.register(metricsRoutes);
   app.register(authRoutes, { prefix: '/api/v1/auth' });
   app.register(userRoutes, { prefix: '/api/v1/users' });
   app.register(auditRoutes, { prefix: '/api/v1/audit-logs' });
   app.register(jobsRoutes, { prefix: '/api/v1/jobs' });
   app.register(eventsRoutes, { prefix: '/api/v1' });
+  app.register(tracesRoutes, { prefix: '/api/v1' });
   app.register(worldsRoutes, { prefix: '/api/v1/worlds' });
   app.register(servicesRoutes, { prefix: '/api/v1/worlds/:worldId/services' });
   app.register(dependenciesRoutes, { prefix: '/api/v1/worlds/:worldId/dependencies' });

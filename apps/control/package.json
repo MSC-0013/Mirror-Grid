@@ -21,6 +21,7 @@
     "@mirrorgrid/experiments": "*",
     "@mirrorgrid/jobs": "*",
     "@mirrorgrid/logging": "*",
+    "@mirrorgrid/observability": "*",
     "@mirrorgrid/platform": "*",
     "@mirrorgrid/reliability": "*",
     "@mirrorgrid/security": "*",

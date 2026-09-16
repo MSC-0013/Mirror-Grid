@@ -7,3 +7,4 @@ export * from './experiments.js';
 export * from './security.js';
 export * from './jobs.js';
 export * from './events.js';
+export * from './observability.js';

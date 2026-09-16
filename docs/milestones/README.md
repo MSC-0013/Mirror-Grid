@@ -38,7 +38,7 @@ and realized in M02.
 | M6 | Security: RBAC, audit, rate limiting | `verify:m6` | ✅ **PASSED** | 6/6 gate; immediate session revocation; RBAC matrix; SHA-256 tamper detection; RFC 6585 rate limiting |
 | M7 | Async platform: jobs, leases, DLQ | `verify:concurrency` | ✅ **PASSED** | 6/6 gate; mutual exclusion; orphan lease recovery; poison pill DLQ transition; redrive; 500 jobs processed concurrently |
 | M8 | Event platform: outbox, Kafka, CQRS | `verify:events` | ✅ **PASSED** | 5/5 gate; atomic outbox rollback; per-world monotonic sequencing; idempotent deduplication; CQRS read projection; sub-50ms WebSockets |
-| M9 | Observability | `verify:observability` | ⬜ NOT STARTED | — |
+| M9 | Observability | `verify:observability` | ✅ **PASSED** | 5/5 gate; W3C traceparent 4-hop propagation; Prometheus /metrics format; correlated structured logging; trace waterfall critical path; standalone SQLite spans |
 | M10 | Reliability engine: SLO, RCA, reports | `verify:reliability` | ⬜ NOT STARTED | — |
 | M11 | Snapshot, replay, search, DR | `verify:recovery` | ⬜ NOT STARTED | — |
 | M12 | Containers, Kubernetes, HA | `verify:ha` | ⬜ NOT STARTED | — |
