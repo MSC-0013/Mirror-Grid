@@ -1,85 +1,88 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  text,
-  integer,
-  bigint,
-  jsonb,
-  timestamp,
-  numeric,
-  index,
-} from 'drizzle-orm/pg-core';
+import { sqliteTable, text, integer, blob, numeric, index } from 'drizzle-orm/sqlite-core';
 import { worlds } from './core.js';
 import { services, serviceDependencies } from './topology.js';
 import { experimentRuns } from './runtime.js';
 
 // 1. Experiments definition table
-export const experiments = pgTable(
+export const experiments = sqliteTable(
   'experiments',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    worldId: uuid('world_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    worldId: text('world_id')
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    name: varchar('name', { length: 120 }).notNull(),
+    name: text('name').notNull(),
     hypothesis: text('hypothesis').notNull(),
-    status: varchar('status', { length: 30 }).notNull().default('DRAFT'),
+    status: text('status').notNull().default('DRAFT'),
     version: integer('version').notNull().default(1),
-    baselineDurationMicros: bigint('baseline_duration_micros', { mode: 'bigint' })
+    baselineDurationMicros: blob('baseline_duration_micros', { mode: 'bigint' })
       .notNull()
       .default(30000000n),
-    faultDurationMicros: bigint('fault_duration_micros', { mode: 'bigint' })
+    faultDurationMicros: blob('fault_duration_micros', { mode: 'bigint' })
       .notNull()
       .default(30000000n),
-    cooldownDurationMicros: bigint('cooldown_duration_micros', { mode: 'bigint' })
+    cooldownDurationMicros: blob('cooldown_duration_micros', { mode: 'bigint' })
       .notNull()
       .default(15000000n),
-    frozenConfig: jsonb('frozen_config'),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    frozenConfig: text('frozen_config', { mode: 'json' }),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [index('idx_experiments_world').on(table.worldId, table.status)],
 );
 
 // 2. Anomaly detectors configured for an experiment
-export const experimentDetectors = pgTable(
+export const experimentDetectors = sqliteTable(
   'experiment_detectors',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    experimentId: uuid('experiment_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    experimentId: text('experiment_id')
       .notNull()
       .references(() => experiments.id, { onDelete: 'cascade' }),
-    name: varchar('name', { length: 120 }).notNull(),
-    detectorType: varchar('detector_type', { length: 50 }).notNull(),
-    targetServiceId: uuid('target_service_id').references(() => services.id, {
+    name: text('name').notNull(),
+    detectorType: text('detector_type').notNull(),
+    targetServiceId: text('target_service_id').references(() => services.id, {
       onDelete: 'cascade',
     }),
-    targetEdgeId: uuid('target_edge_id').references(() => serviceDependencies.id, {
+    targetEdgeId: text('target_edge_id').references(() => serviceDependencies.id, {
       onDelete: 'cascade',
     }),
-    thresholdValue: numeric('threshold_value', { precision: 12, scale: 4 }).notNull(),
-    windowDurationMicros: bigint('window_duration_micros', { mode: 'bigint' })
+    thresholdValue: numeric('threshold_value').notNull(),
+    windowDurationMicros: blob('window_duration_micros', { mode: 'bigint' })
       .notNull()
       .default(5000000n),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [index('idx_detectors_experiment').on(table.experimentId)],
 );
 
 // 3. Immutable timeline events generated during a run
-export const experimentEvents = pgTable(
+export const experimentEvents = sqliteTable(
   'experiment_events',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    runId: uuid('run_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    runId: text('run_id')
       .notNull()
       .references(() => experimentRuns.id, { onDelete: 'cascade' }),
-    simTimeMicros: bigint('sim_time_micros', { mode: 'bigint' }).notNull(),
-    eventCategory: varchar('event_category', { length: 50 }).notNull(),
-    summary: varchar('summary', { length: 255 }).notNull(),
-    details: jsonb('details').default({}),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    simTimeMicros: blob('sim_time_micros', { mode: 'bigint' }).notNull(),
+    eventCategory: text('event_category').notNull(),
+    summary: text('summary').notNull(),
+    details: text('details', { mode: 'json' }).$defaultFn(() => ({})),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [index('idx_exp_events_timeline').on(table.runId, table.simTimeMicros)],
 );

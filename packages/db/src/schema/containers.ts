@@ -1,60 +1,55 @@
-import {
-  pgTable,
-  uuid,
-  varchar,
-  text,
-  integer,
-  numeric,
-  boolean,
-  timestamp,
-  unique,
-  index,
-} from 'drizzle-orm/pg-core';
+import { sqliteTable, text, integer, numeric, unique, index } from 'drizzle-orm/sqlite-core';
 import { worlds } from './core.js';
 import { services, serviceDependencies } from './topology.js';
 
 // 1. Runtime deployments
-export const runtimeDeployments = pgTable(
+export const runtimeDeployments = sqliteTable(
   'runtime_deployments',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    worldId: uuid('world_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    worldId: text('world_id')
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    runtimeMode: varchar('runtime_mode', { length: 20 }).notNull().default('LOGICAL'),
+    runtimeMode: text('runtime_mode').notNull().default('LOGICAL'),
     topologyVersion: integer('topology_version').notNull().default(1),
-    status: varchar('status', { length: 30 }).notNull().default('PENDING'),
+    status: text('status').notNull().default('PENDING'),
     errorMessage: text('error_message'),
-    deployedAt: timestamp('deployed_at', { withTimezone: true }).notNull().defaultNow(),
-    terminatedAt: timestamp('terminated_at', { withTimezone: true }),
+    deployedAt: integer('deployed_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    terminatedAt: integer('terminated_at', { mode: 'timestamp_ms' }),
   },
   (table) => [index('idx_deployments_world').on(table.worldId, table.status)],
 );
 
 // 2. Container instances
-export const containerInstances = pgTable(
+export const containerInstances = sqliteTable(
   'container_instances',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    worldId: uuid('world_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    worldId: text('world_id')
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    deploymentId: uuid('deployment_id')
+    deploymentId: text('deployment_id')
       .notNull()
       .references(() => runtimeDeployments.id, { onDelete: 'cascade' }),
-    serviceId: uuid('service_id')
+    serviceId: text('service_id')
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    dockerContainerId: varchar('docker_container_id', { length: 128 }).notNull(),
-    dockerImage: varchar('docker_image', { length: 255 }).notNull(),
+    dockerContainerId: text('docker_container_id').notNull(),
+    dockerImage: text('docker_image').notNull(),
     servicePort: integer('service_port').notNull(),
     adminPort: integer('admin_port').notNull(),
     toxiproxyPort: integer('toxiproxy_port'),
-    status: varchar('status', { length: 30 }).notNull().default('CREATED'),
-    cpuLimitCores: numeric('cpu_limit_cores', { precision: 4, scale: 2 }).notNull().default('1.0'),
+    status: text('status').notNull().default('CREATED'),
+    cpuLimitCores: numeric('cpu_limit_cores').notNull().default('1.0'),
     memoryLimitMb: integer('memory_limit_mb').notNull().default(256),
-    startedAt: timestamp('started_at', { withTimezone: true }),
-    stoppedAt: timestamp('stopped_at', { withTimezone: true }),
+    startedAt: integer('started_at', { mode: 'timestamp_ms' }),
+    stoppedAt: integer('stopped_at', { mode: 'timestamp_ms' }),
   },
   (table) => [
     unique('uq_service_deployment').on(table.deploymentId, table.serviceId),
@@ -63,22 +58,26 @@ export const containerInstances = pgTable(
   ],
 );
 
-// 3. Container edge proxies
-export const containerEdgeProxies = pgTable(
+// 3. Edge proxy routing records
+export const containerEdgeProxies = sqliteTable(
   'container_edge_proxies',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    deploymentId: uuid('deployment_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    deploymentId: text('deployment_id')
       .notNull()
       .references(() => runtimeDeployments.id, { onDelete: 'cascade' }),
-    edgeId: uuid('edge_id')
+    edgeId: text('edge_id')
       .notNull()
       .references(() => serviceDependencies.id, { onDelete: 'cascade' }),
     toxiproxyListenPort: integer('toxiproxy_listen_port').notNull(),
-    targetHost: varchar('target_host', { length: 120 }).notNull(),
+    targetHost: text('target_host').notNull(),
     targetPort: integer('target_port').notNull(),
-    isActive: boolean('is_active').notNull().default(true),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [
     unique('uq_deployment_edge').on(table.deploymentId, table.edgeId),

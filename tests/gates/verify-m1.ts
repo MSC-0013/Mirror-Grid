@@ -16,8 +16,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import postgres from 'postgres';
-import { runMigrations } from '../../packages/db/src/index.js';
+import { createClient } from '@libsql/client';
+import { runMigrations, resolveDatabaseUrl } from '../../packages/db/src/index.js';
 import { buildServer as buildControlServer } from '../../apps/control/src/server.js';
 import { DependencyGraph, reachableFrom } from '@mirrorgrid/domain';
 
@@ -57,16 +57,16 @@ async function runM1Gate() {
   console.log('   MIRRORGRID M1: Domain Model & Topology Gate');
   console.log('====================================================\n');
 
-  const connectionString =
-    process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/mirrorgrid';
+  const connectionString = process.env.DATABASE_URL || 'file:./data/mirrorgrid.db';
 
   // 1. Check database connectivity and migrations
   console.log('[1/8] Verifying database connectivity & migrations...');
-  const sql = postgres(connectionString, { max: 1, connect_timeout: 3 });
-  await sql`SELECT 1`;
-  await sql.end();
+  const url = resolveDatabaseUrl(connectionString);
+  const client = createClient({ url });
+  await client.execute('SELECT 1');
+  client.close();
   await runMigrations(connectionString);
-  console.log('✓ PostgreSQL connected and migrations up to date.');
+  console.log('✓ SQL database connected and migrations up to date.');
 
   // 2. Boot Control Plane
   console.log('\n[2/8] Booting Control Plane server...');

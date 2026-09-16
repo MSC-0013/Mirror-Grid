@@ -1,25 +1,24 @@
 import {
-  pgTable,
-  uuid,
+  sqliteTable,
   text,
   integer,
-  bigint,
+  blob,
   numeric,
-  jsonb,
-  timestamp,
   unique,
   index,
   check,
-} from 'drizzle-orm/pg-core';
+} from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 import { worlds } from './core.js';
 import type { RetryPolicy, CircuitBreakerPolicy } from '@mirrorgrid/domain';
 
-export const services = pgTable(
+export const services = sqliteTable(
   'services',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    worldId: uuid('world_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    worldId: text('world_id')
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
@@ -29,9 +28,16 @@ export const services = pgTable(
     targetInstances: integer('target_instances').notNull().default(1),
     concurrencyLimit: integer('concurrency_limit').notNull().default(64),
     queueCapacity: integer('queue_capacity').notNull().default(1000),
-    config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    config: text('config', { mode: 'json' })
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .$defaultFn(() => ({})),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [
     unique('services_world_name_unique').on(table.worldId, table.name),
@@ -53,21 +59,27 @@ export const services = pgTable(
   ],
 );
 
-export const serviceInstances = pgTable(
+export const serviceInstances = sqliteTable(
   'service_instances',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    serviceId: uuid('service_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    serviceId: text('service_id')
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    worldId: uuid('world_id')
+    worldId: text('world_id')
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
     instanceIndex: integer('instance_index').notNull(),
     status: text('status').notNull().default('STOPPED'),
     containerId: text('container_id'),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [
     unique('service_instances_service_index_unique').on(table.serviceId, table.instanceIndex),
@@ -78,35 +90,50 @@ export const serviceInstances = pgTable(
   ],
 );
 
-export const serviceDependencies = pgTable(
+export const serviceDependencies = sqliteTable(
   'service_dependencies',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    worldId: uuid('world_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    worldId: text('world_id')
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    sourceServiceId: uuid('source_service_id')
+    sourceServiceId: text('source_service_id')
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    targetServiceId: uuid('target_service_id')
+    targetServiceId: text('target_service_id')
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
     timeoutMs: integer('timeout_ms').notNull().default(5000),
     criticality: text('criticality').notNull().default('REQUIRED'),
-    retryPolicy: jsonb('retry_policy')
+    retryPolicy: text('retry_policy', { mode: 'json' })
       .$type<RetryPolicy>()
       .notNull()
-      .default(
-        sql`'{"type":"EXPONENTIAL","maxAttempts":3,"baseDelayMs":100,"maxDelayMs":30000,"jitterFactor":0.25,"budgetPercent":20}'::jsonb`,
-      ),
-    circuitBreakerPolicy: jsonb('circuit_breaker_policy')
+      .$defaultFn(() => ({
+        type: 'EXPONENTIAL',
+        maxAttempts: 3,
+        baseDelayMs: 100,
+        maxDelayMs: 30000,
+        jitterFactor: 0.25,
+        budgetPercent: 20,
+      })),
+    circuitBreakerPolicy: text('circuit_breaker_policy', { mode: 'json' })
       .$type<CircuitBreakerPolicy>()
       .notNull()
-      .default(
-        sql`'{"enabled":true,"threshold":5,"windowMs":10000,"cooldownMs":30000,"halfOpenProbes":3}'::jsonb`,
-      ),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+      .$defaultFn(() => ({
+        enabled: true,
+        threshold: 5,
+        windowMs: 10000,
+        cooldownMs: 30000,
+        halfOpenProbes: 3,
+      })),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [
     unique('service_dependencies_source_target_unique').on(
@@ -128,24 +155,33 @@ export const serviceDependencies = pgTable(
   ],
 );
 
-export const workloads = pgTable(
+export const workloads = sqliteTable(
   'workloads',
   {
-    id: uuid('id').defaultRandom().primaryKey(),
-    worldId: uuid('world_id')
+    id: text('id')
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    worldId: text('world_id')
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
     name: text('name').notNull(),
-    targetServiceId: uuid('target_service_id')
+    targetServiceId: text('target_service_id')
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
     pattern: text('pattern').notNull().default('CONSTANT'),
     baseRate: numeric('base_rate').notNull(),
     peakRate: numeric('peak_rate'),
-    durationMs: bigint('duration_ms', { mode: 'bigint' }),
-    config: jsonb('config').$type<Record<string, unknown>>().notNull().default({}),
-    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    durationMs: blob('duration_ms', { mode: 'bigint' }),
+    config: text('config', { mode: 'json' })
+      .$type<Record<string, unknown>>()
+      .notNull()
+      .$defaultFn(() => ({})),
+    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
+    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+      .notNull()
+      .$defaultFn(() => new Date()),
   },
   (table) => [
     unique('workloads_world_name_unique').on(table.worldId, table.name),

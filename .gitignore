@@ -45,3 +45,9 @@ Thumbs.db
 
 # Local cluster data
 infrastructure/data/
+data/
+*.db
+*.sqlite
+*.db-journal
+*.db-wal
+*.db-shm

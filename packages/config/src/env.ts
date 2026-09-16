@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
-  DATABASE_URL: z.string().default('postgres://postgres:postgres@localhost:5432/mirrorgrid'),
+  DATABASE_URL: z.string().default('file:./data/mirrorgrid.db'),
   GATEWAY_PORT: z.coerce.number().int().positive().default(4000),
   CONTROL_PORT: z.coerce.number().int().positive().default(4001),
   SIMULATION_PORT: z.coerce.number().int().positive().default(4002),

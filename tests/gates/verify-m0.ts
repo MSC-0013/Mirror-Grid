@@ -18,8 +18,8 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import postgres from 'postgres';
-import { runMigrations } from '../../packages/db/src/index.js';
+import { createClient } from '@libsql/client';
+import { runMigrations, resolveDatabaseUrl } from '../../packages/db/src/index.js';
 import { buildServer as buildControlServer } from '../../apps/control/src/server.js';
 import { buildGateway } from '../../apps/gateway/src/server.js';
 
@@ -59,19 +59,18 @@ async function runGate() {
   console.log('   MIRRORGRID M0: Foundation & Walking Skeleton Gate');
   console.log('====================================================\n');
 
-  const connectionString =
-    process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/mirrorgrid';
+  const connectionString = process.env.DATABASE_URL || 'file:./data/mirrorgrid.db';
 
-  // 1. Check PostgreSQL connectivity
-  console.log('[1/9] Checking PostgreSQL connectivity on port 5432...');
+  // 1. Check SQL database connectivity
+  console.log('[1/9] Checking SQL database connectivity...');
   try {
-    const sql = postgres(connectionString, { max: 1, connect_timeout: 3 });
-    await sql`SELECT 1`;
-    await sql.end();
-    console.log('✓ PostgreSQL is reachable and accepting queries.');
+    const url = resolveDatabaseUrl(connectionString);
+    const client = createClient({ url });
+    await client.execute('SELECT 1');
+    client.close();
+    console.log('✓ SQL database is reachable and accepting queries.');
   } catch (err) {
-    console.error('✗ Failed to connect to PostgreSQL at ' + connectionString);
-    console.error('Please ensure docker compose --profile core up -d is running.');
+    console.error('✗ Failed to connect to SQL database at ' + connectionString);
     throw err;
   }
 
