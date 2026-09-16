@@ -7,7 +7,7 @@ export function generateBimodalTable(
   healthyMeanUs: number,
   tailMeanUs: number,
   tailProbability: number,
-  size: number = 4096
+  size: number = 4096,
 ): ICDFTable {
   const buckets = new Int32Array(size);
   const healthyThreshold = 1 - tailProbability;
@@ -29,9 +29,5 @@ export function generateBimodalTable(
     buckets[i] = Math.max(1, val);
   }
 
-  return createICDFTable(
-    'bimodal',
-    { healthyMeanUs, tailMeanUs, tailProbability, size },
-    buckets
-  );
+  return createICDFTable('bimodal', { healthyMeanUs, tailMeanUs, tailProbability, size }, buckets);
 }

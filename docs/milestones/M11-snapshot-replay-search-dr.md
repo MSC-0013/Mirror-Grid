@@ -15,6 +15,7 @@ Furthermore, production-grade resilience demands rigorous **Disaster Recovery (D
 measure, not guess, their Recovery Point Objective (RPO) and Recovery Time Objective (RTO).
 
 This milestone delivers the **Incident Time Machine and DR Platform**:
+
 1. **Incremental Merkle Checkpointing:** Content-addressable state snapshots capturing complete service,
    queue, breaker, and in-flight message state.
 2. **Deterministic Replay Engine:** Rewind an experiment to any prior checkpoint, re-execute recorded workloads,
@@ -38,6 +39,7 @@ This milestone delivers the **Incident Time Machine and DR Platform**:
 ## 3. Scope
 
 ### In scope
+
 - `packages/recovery`: Merkle snapshot serializer, content-addressable component storage, deterministic
   replay coordinator, bisection algorithm, and DR restoration manager.
 - Checkpoint capture: Periodic (every $N$ virtual seconds) and trigger-based (on fault injection or breaker trip).
@@ -48,6 +50,7 @@ This milestone delivers the **Incident Time Machine and DR Platform**:
 - UI: Incident Time Machine & Replay Console (§75), Checkpoint Explorer, and DR Scorecard.
 
 ### Explicitly out of scope
+
 - Multi-region cross-cloud block storage replication (e.g. AWS S3 cross-region replication).
 - Physical PostgreSQL WAL shipping / hot standby streaming replication.
 - Unstructured image or video artifact archival.
@@ -84,6 +87,7 @@ Dumping the entire database every second would consume gigabytes of storage. MIR
 ### The Time Machine Replay Protocol
 
 To replay an incident:
+
 1. The operator selects an experiment run and scrubs the timeline to time $T_0$.
 2. The Replay Engine identifies the nearest preceding checkpoint $C \le T_0$.
 3. The world is initialized with the exact state from $C$.
@@ -101,6 +105,7 @@ might diverge. Finding where they parted manually across millions of events is n
 
 The **Bisector** runs a binary search across checkpoints:
 $$\text{midpoint} = \lfloor(\text{low} + \text{high}) / 2\rfloor$$
+
 - Restore checkpoint at `midpoint`.
 - Replay to `midpoint + 1` tick.
 - Compare Merkle root hash against baseline run.
@@ -108,17 +113,18 @@ $$\text{midpoint} = \lfloor(\text{low} + \text{high}) / 2\rfloor$$
 - If mismatch: divergence is in the first half (`high = midpoint`).
 - At termination (window size = 1 event), the bisector compares component hashes to name the exact
   offending entity:
-  > *"Divergence detected at T=18,241,000µs on Service [orders]: queueDepth was 12 in Run 1 but 13 in Run 2."*
+  > _"Divergence detected at T=18,241,000µs on Service [orders]: queueDepth was 12 in Run 1 but 13 in Run 2."_
 
 ### Disaster Recovery: Measuring RPO and RTO
 
 MIRRORGRID treats DR as a verifiable test suite, not a compliance checklist:
+
 - **RPO (Recovery Point Objective):** The maximum data loss window. Measured as:
   $$\text{RPO} = T_{\text{disaster}} - T_{\text{latest\_snapshot}}$$
 - **RTO (Recovery Time Objective):** The real-world elapsed time required to restore service availability:
   $$\text{RTO} = T_{\text{health\_verified}} - T_{\text{restore\_initiated}}$$
-The DR verification gate (`verify:recovery`) simulates a catastrophic drop and asserts $\text{RTO} < 5\text{s}$
-and zero data corruption.
+  The DR verification gate (`verify:recovery`) simulates a catastrophic drop and asserts $\text{RTO} < 5\text{s}$
+  and zero data corruption.
 
 ---
 
@@ -181,6 +187,7 @@ CREATE INDEX idx_dr_world ON dr_restorations(world_id, created_at DESC);
 ```
 
 ### Index rationale
+
 - `idx_snapshots_world_time`: Powers the interactive scrubber in the Incident Time Machine.
 - `idx_components_lookup`: Enables deduplication checks when storing component payloads.
 
@@ -300,11 +307,13 @@ export interface DrCoordinator {
 Routes in `apps/control` under `/api/v1/worlds/:worldId/recovery`.
 
 ### 1. Capture World Checkpoint
+
 - `POST /api/v1/worlds/:worldId/recovery/snapshots`
 - **Request Body:** `{ reason?: string }`
 - **Response:** `201 Created` with `MerkleSnapshot` summary and Merkle root hash.
 
 ### 2. Rewind & Replay Incident
+
 - `POST /api/v1/worlds/:worldId/recovery/replay`
 - **Request Body (zod schema):**
   ```typescript
@@ -317,11 +326,13 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId/recovery`.
 - **Response:** `200 OK` with `{ status: 'REPLAY_READY', simTimeMicros: string, stateHash: string }`.
 
 ### 3. Bisect Divergence
+
 - `POST /api/v1/worlds/:worldId/recovery/bisect`
 - **Request Body:** `{ run1Id: string, run2Id: string }`
 - **Response:** `200 OK` with `BisectionDifference` detailing the exact diverging component.
 
 ### 4. Run Disaster Recovery Drill
+
 - `POST /api/v1/worlds/:worldId/recovery/dr/drill`
 - **Request Body:** `{ snapshotId: string }`
 - **Response:** `200 OK` with `DrDrillResult` (RPO, RTO, verification match).
@@ -331,6 +342,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId/recovery`.
 ## 9. UI
 
 ### 1. Incident Time Machine & Replay Console (`apps/web/src/app/worlds/[worldId]/replay/page.tsx`)
+
 - **Spec alignment:** §75 (Incident Time Machine & Replay Console).
 - **Layout:**
   - **Top Scrub Bar:** Interactive time-slider representing the experiment timeline ($T_0$ to $T_{\text{end}}$):
@@ -346,6 +358,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId/recovery`.
     and simulate a new counterfactual timeline.
 
 ### 2. DR Drill & RPO/RTO Scorecard (`apps/web/src/app/worlds/[worldId]/dr/page.tsx`)
+
 - **Visuals:**
   - Large RPO Metric Card: `RPO: 1.2s (Well within 5.0s Target)`.
   - Large RTO Metric Card: `RTO: 1,420ms (Target: < 5,000ms)`.
@@ -374,6 +387,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId/recovery`.
 ## 11. Testing
 
 ### Unit tests (`packages/recovery/tests/unit`)
+
 - `merkle-tree.test.ts`: Verify identical component states always yield identical Merkle root hashes.
 - `dedup.test.ts`: Assert unchanging components are marked `is_deduplicated = true` with zero payload duplication.
 - `bisector.test.ts`:
@@ -381,6 +395,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId/recovery`.
   - Assert bisector identifies checkpoint #64 in exactly $\lceil\log_2(100)\rceil = 7$ iterations.
 
 ### Integration tests (`apps/control/tests/integration/recovery`)
+
 - Capture snapshot, wipe active world state in Postgres, execute DR restore, assert all services and edges recover cleanly.
 - Assert replay to $T=20\text{s}$ matches original run's state hash.
 
@@ -396,22 +411,34 @@ The gate test validates these 5 recovery platform assertions:
 // tests/gates/verify-recovery.ts
 
 // Assertion 1: Deterministic rewind and replay reproduces exact canonical Merkle state hash
-assert(replayStateHash === originalStateHash, 'Assertion 1: Replay reproduces exact state hash bit-for-bit');
+assert(
+  replayStateHash === originalStateHash,
+  'Assertion 1: Replay reproduces exact state hash bit-for-bit',
+);
 
 // Assertion 2: Checkpoint bisection pinpoints injected 1-tick drift to exact entity
-assert(bisectionResult.componentId === 'orders' && bisectionResult.simTimeMicros === targetDriftMicros,
-  'Assertion 2: Bisection isolates divergent component and timestamp');
+assert(
+  bisectionResult.componentId === 'orders' && bisectionResult.simTimeMicros === targetDriftMicros,
+  'Assertion 2: Bisection isolates divergent component and timestamp',
+);
 
 // Assertion 3: Incremental snapshots achieve >= 80% payload deduplication across successive ticks
-assert(deduplicationRatio >= 0.80, 'Assertion 3: Incremental snapshot storage deduplication verified');
+assert(
+  deduplicationRatio >= 0.8,
+  'Assertion 3: Incremental snapshot storage deduplication verified',
+);
 
 // Assertion 4: Disaster Recovery restores fully functional world from cold snapshot
-assert(restoredWorldHealthy && restoredWorldServiceCount === originalCount,
-  'Assertion 4: DR restore cleanly reconstitutes operational world');
+assert(
+  restoredWorldHealthy && restoredWorldServiceCount === originalCount,
+  'Assertion 4: DR restore cleanly reconstitutes operational world',
+);
 
 // Assertion 5: DR drill certifies RPO <= 2s and RTO <= 3000ms
-assert(drResult.rpoMicros <= 2_000_000n && drResult.rtoMs <= 3000,
-  'Assertion 5: DR drill certifies RPO and RTO within target bounds');
+assert(
+  drResult.rpoMicros <= 2_000_000n && drResult.rtoMs <= 3000,
+  'Assertion 5: DR drill certifies RPO and RTO within target bounds',
+);
 ```
 
 ---

@@ -36,12 +36,7 @@ export class SecondBucket {
   private readonly histogram = new LogLinearHistogram();
   private readonly retainSamples: boolean;
 
-  constructor(
-    serviceId: string,
-    virtualTimeUs: bigint,
-    wallTimeMs: number,
-    retainSamples = true
-  ) {
+  constructor(serviceId: string, virtualTimeUs: bigint, wallTimeMs: number, retainSamples = true) {
     this.serviceId = serviceId;
     this.virtualTimeUs = virtualTimeUs;
     this.wallTimeMs = wallTimeMs;

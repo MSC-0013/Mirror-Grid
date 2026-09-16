@@ -22,12 +22,14 @@ established the no-mock rule, every node and edge the user sees is a real DB row
 ## 3. Scope
 
 ### In scope
+
 - Migration 002_topology.sql: services, service_instances, service_dependencies, workloads
 - packages/domain: entities, state machines, transition table, graph algorithms, RuntimeAdapter port
 - apps/control: services, dependencies, workloads modules (full six-file shape each)
 - apps/web: topology page, node/edge design, service drawer, service page
 
 ### Explicitly out of scope
+
 - RuntimeAdapter implementations (M02 = LogicalRuntimeAdapter, M03 = ContainerRuntimeAdapter)
 - Simulation engine (M2)
 - Fault injection (M4)
@@ -155,6 +157,7 @@ CREATE TABLE workloads (
 ```
 
 **Index rationale:**
+
 - `services_world_status_idx`: covers `WHERE world_id = $1` (topology page) and
   `WHERE world_id = $1 AND status = 'FAILED'` (alert queries).
 - `service_deps_source_idx` / `service_deps_target_idx`: separate indexes for the two traversal
@@ -166,6 +169,7 @@ CREATE TABLE workloads (
 ## 6. Packages
 
 ### packages/domain
+
 ```
 src/
   world/
@@ -195,6 +199,7 @@ src/
 ```
 
 ### apps/control (additions)
+
 ```
 src/modules/
   services/
@@ -236,11 +241,11 @@ export type DeterminismClass = 'DETERMINISTIC' | 'SEEDED_INPUTS' | 'NON_DETERMIN
 export interface RuntimeCapabilities {
   readonly mode: RuntimeMode;
   readonly determinism: DeterminismClass;
-  readonly maxServices: number;        // LOGICAL ~1000, CONTAINER ~8
-  readonly maxWorkloadRate: number;    // LOGICAL ~50000/s, CONTAINER ~2000/s
-  readonly supportedFaults: string[];  // FaultType enum values
+  readonly maxServices: number; // LOGICAL ~1000, CONTAINER ~8
+  readonly maxWorkloadRate: number; // LOGICAL ~50000/s, CONTAINER ~2000/s
+  readonly supportedFaults: string[]; // FaultType enum values
   readonly supportsReplayVerification: boolean;
-  readonly forcedDriver?: 'REALTIME';  // HYBRID cannot run FastDriver
+  readonly forcedDriver?: 'REALTIME'; // HYBRID cannot run FastDriver
 }
 
 export interface RuntimeHandle {
@@ -249,16 +254,20 @@ export interface RuntimeHandle {
   readonly worldId: string;
 }
 
-export interface WorkloadHandle { readonly id: string; }
-export interface FaultHandle    { readonly id: string; }
+export interface WorkloadHandle {
+  readonly id: string;
+}
+export interface FaultHandle {
+  readonly id: string;
+}
 
 export interface RuntimeSample {
   readonly serviceId: string;
-  readonly virtualTimeUs: bigint;   // WORLD_VIRTUAL microseconds from run start
-  readonly wallTimeMs: number;      // PLATFORM_WALL, for display ordering only
+  readonly virtualTimeUs: bigint; // WORLD_VIRTUAL microseconds from run start
+  readonly wallTimeMs: number; // PLATFORM_WALL, for display ordering only
   readonly requestsCompleted: number;
   readonly requestsFailed: number;
-  readonly latencySamplesUs: number[];   // raw, for exact quantiles (LOGICAL only)
+  readonly latencySamplesUs: number[]; // raw, for exact quantiles (LOGICAL only)
   readonly queueDepth: number;
   readonly activeSlots: number;
   readonly circuitState: 'CLOSED' | 'OPEN' | 'HALF_OPEN';
@@ -266,7 +275,13 @@ export interface RuntimeSample {
 
 export interface ServiceHealth {
   readonly serviceId: string;
-  readonly status: 'STARTING' | 'HEALTHY' | 'DEGRADED' | 'PARTIALLY_AVAILABLE' | 'UNHEALTHY' | 'FAILED';
+  readonly status:
+    | 'STARTING'
+    | 'HEALTHY'
+    | 'DEGRADED'
+    | 'PARTIALLY_AVAILABLE'
+    | 'UNHEALTHY'
+    | 'FAILED';
   readonly instanceStatuses: Array<{ index: number; status: string; containerId?: string }>;
 }
 
@@ -303,7 +318,7 @@ export interface WorkloadSpec {
 
 export interface FaultSpec {
   readonly faultId: string;
-  readonly type: string;   // FaultType — defined in M04
+  readonly type: string; // FaultType — defined in M04
   readonly targetServiceId: string;
   readonly parameters: Record<string, unknown>;
   readonly ttlMs: number;
@@ -329,7 +344,9 @@ export interface RuntimeAdapter {
 ```typescript
 // packages/domain/src/graph/algorithms.ts
 export type ServiceId = string;
-export interface CyclePath { services: ServiceId[] }
+export interface CyclePath {
+  services: ServiceId[];
+}
 
 export function detectCycles(graph: DependencyGraph): CyclePath | null;
 export function topologicalOrder(graph: DependencyGraph): ServiceId[];
@@ -343,6 +360,7 @@ export function dependentsOf(graph: DependencyGraph, serviceId: ServiceId): Set<
 ## 8. API
 
 ### Services
+
 ```
 GET    /api/v1/worlds/:worldId/services
 POST   /api/v1/worlds/:worldId/services
@@ -352,6 +370,7 @@ DELETE /api/v1/worlds/:worldId/services/:serviceId   409 if dependents exist
 ```
 
 ### Dependencies
+
 ```
 GET    /api/v1/worlds/:worldId/dependencies
 POST   /api/v1/worlds/:worldId/dependencies          422 if cycle detected (names the cycle)
@@ -361,6 +380,7 @@ DELETE /api/v1/worlds/:worldId/dependencies/:id
 ```
 
 ### Workloads
+
 ```
 GET    /api/v1/worlds/:worldId/workloads
 POST   /api/v1/worlds/:worldId/workloads
@@ -369,6 +389,7 @@ DELETE /api/v1/worlds/:worldId/workloads/:id
 ```
 
 ### Graph query
+
 ```
 GET    /api/v1/worlds/:worldId/graph
   Response: {
@@ -383,6 +404,7 @@ GET    /api/v1/worlds/:worldId/graph
 ## 9. UI
 
 ### World overview / topology page (spec §19–22)
+
 - Full-width React Flow canvas
 - Node design (§20): service name, type icon, status badge (icon + text, never colour alone),
   instance count, health ring
@@ -398,6 +420,7 @@ GET    /api/v1/worlds/:worldId/graph
 - Toolbar: zoom in/out, fit, layout toggle, add service, add dependency
 
 ### Service drawer (spec §23)
+
 - Right-side panel (400px), slides in on double-click
 - Tabs: Overview, Instances, Dependencies, Policies
 - Overview: status, type, concurrency limit, queue capacity, created date
@@ -405,6 +428,7 @@ GET    /api/v1/worlds/:worldId/graph
 - Policies tab: circuit breaker config, retry policy config (editable inline)
 
 ### Service page (spec §24–26)
+
 - Dedicated page `/worlds/:worldId/services/:serviceId`
 - Full service config, all instances, dependency graph scoped to this service,
   metric history (placeholder charts at M1 — populated from M2)
@@ -434,6 +458,7 @@ GET    /api/v1/worlds/:worldId/graph
 ## 11. Testing
 
 ### Unit (packages/domain)
+
 - `detectCycles`: acyclic graph -> null; A->B->C->A -> CyclePath with 3 services
 - `reachableFrom('payments')` on the §10 topology -> { orders, gateway }
 - `topologicalOrder`: correct order; throws on cyclic graph
@@ -443,15 +468,18 @@ GET    /api/v1/worlds/:worldId/graph
 - `ServiceStatus` transition table: all 8 states, valid and invalid transitions
 
 ### Integration (testcontainers)
+
 - Create service -> appears in GET /services
 - Create dependency A->B then B->A -> 422 naming the cycle
 - Delete service with dependents -> 409 (never a dangling edge)
 - Workload references a service in a different world -> 422
 
 ### Contract
+
 - OpenAPI updated and committed after service/dependency/workload routes added
 
 ### E2E (Playwright)
+
 - Seed §10 topology via API -> topology page renders 6 nodes and 8 edges
 - Click Orders node -> drawer shows its two outbound dependencies (Inventory, Payments)
 

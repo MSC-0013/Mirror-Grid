@@ -12,6 +12,7 @@ Following the architectural decision documented in M00 (ADR-001), MIRRORGRID avo
 in favor of **stateful, revocable sessions** backed by Redis and Postgres.
 
 This milestone establishes the security foundation of the platform:
+
 1. **Granular Role-Based Access Control (RBAC):** Hierarchical permissions governing every API endpoint.
 2. **Cryptographically Chained Audit Trail:** An append-only, tamper-evident audit ledger capturing every
    mutating action, before/after JSON diffs, and cryptographic hash links.
@@ -31,6 +32,7 @@ This milestone establishes the security foundation of the platform:
 ## 3. Scope
 
 ### In scope
+
 - Password hashing using Argon2id with OWASP-recommended memory and time cost parameters.
 - Session lifecycle: secure HTTP-only cookies, Redis session caching, instant cross-device revocation,
   and CSRF double-submit token protection.
@@ -44,6 +46,7 @@ This milestone establishes the security foundation of the platform:
 - UI: Team management roster, role assignment modal, active sessions inspector, and Audit Trail Explorer (§70, §71).
 
 ### Explicitly out of scope
+
 - Third-party SSO / SAML 2.0 / OpenID Connect federation (deferred to future enterprise plugins).
 - Attribute-Based Access Control (ABAC) or Open Policy Agent (OPA) policy engines.
 - Database column-level field encryption (Postgres tables are protected via database-level encryption at rest).
@@ -59,6 +62,7 @@ If an operator's role is demoted or their credentials are compromised, an active
 until its expiration unless complex, distributed blacklists are maintained.
 
 MIRRORGRID employs server-managed sessions:
+
 1. Client presents a 256-bit cryptographically random session token via an `HttpOnly`, `SameSite=Lax`,
    `Secure` cookie.
 2. The database and Redis cache store the SHA-256 hash of the token (preventing token theft if the
@@ -89,21 +93,22 @@ its mathematical integrity.
 
 ### RBAC Permission Matrix
 
-| Permission Code | Description | Viewer | Operator | Admin |
-|---|---|:---:|:---:|:---:|
-| `topology:read` | View worlds, services, and edges | Yes | Yes | Yes |
-| `topology:write` | Create, edit, and delete topologies | No | Yes | Yes |
-| `experiments:read`| View experiments, live metrics, and reports | Yes | Yes | Yes |
-| `experiments:run` | Start, stop, and configure experiments | No | Yes | Yes |
-| `faults:inject` | Inject faults and modify circuit breakers | No | Yes | Yes |
-| `chaos:abort` | Trigger emergency chaos kill-switch | No | Yes | Yes |
-| `audit:read` | Inspect audit ledger and security logs | No | No | Yes |
-| `users:manage` | Invite users, assign roles, revoke sessions | No | No | Yes |
+| Permission Code    | Description                                 | Viewer | Operator | Admin |
+| ------------------ | ------------------------------------------- | :----: | :------: | :---: |
+| `topology:read`    | View worlds, services, and edges            |  Yes   |   Yes    |  Yes  |
+| `topology:write`   | Create, edit, and delete topologies         |   No   |   Yes    |  Yes  |
+| `experiments:read` | View experiments, live metrics, and reports |  Yes   |   Yes    |  Yes  |
+| `experiments:run`  | Start, stop, and configure experiments      |   No   |   Yes    |  Yes  |
+| `faults:inject`    | Inject faults and modify circuit breakers   |   No   |   Yes    |  Yes  |
+| `chaos:abort`      | Trigger emergency chaos kill-switch         |   No   |   Yes    |  Yes  |
+| `audit:read`       | Inspect audit ledger and security logs      |   No   |    No    |  Yes  |
+| `users:manage`     | Invite users, assign roles, revoke sessions |   No   |    No    |  Yes  |
 
 ### Adaptive Rate Limiting
 
 Rate limiting uses the `TokenBucket` algorithm from `packages/reliability/src/core/token-bucket.ts`
 adapted to Redis via Lua scripting:
+
 - **Baseline Allowance:** 100 requests per minute per IP / User for standard endpoints; 20 req/min for auth routes.
 - **Adaptive Penalty:** If a client triggers 5 consecutive `401 Unauthorized`, `403 Forbidden`, or `429 Too Many Requests`
   responses within 30 seconds, their IP is flagged with an adaptive penalty: their token refill rate is
@@ -354,7 +359,10 @@ export interface AuditRecord {
 
 export interface AuditLogger {
   log(entry: AuditEntryInput): Promise<AuditRecord>;
-  verifyChain(fromSeq?: bigint, toSeq?: bigint): Promise<{ readonly valid: boolean; readonly brokenSeq?: bigint }>;
+  verifyChain(
+    fromSeq?: bigint,
+    toSeq?: bigint,
+  ): Promise<{ readonly valid: boolean; readonly brokenSeq?: bigint }>;
 }
 ```
 
@@ -365,6 +373,7 @@ export interface AuditLogger {
 Routes in `apps/control` under `/api/v1`.
 
 ### 1. User Login
+
 - `POST /api/v1/auth/login`
 - **Request Body (zod schema):**
   ```typescript
@@ -376,18 +385,21 @@ Routes in `apps/control` under `/api/v1`.
 - **Response:** `200 OK` with User profile; sets `mg_session` HttpOnly cookie.
 
 ### 2. User Logout & Session Revocation
+
 - `POST /api/v1/auth/logout`
 - **Response:** `200 OK`; clears `mg_session` cookie; deletes session from Redis & DB.
 - `POST /api/v1/auth/sessions/:sessionId/revoke` (Revoke specific device)
 - `POST /api/v1/auth/sessions/revoke-all` (Revoke all sessions except current)
 
 ### 3. Assign User Role
+
 - `PUT /api/v1/users/:id/roles`
 - **Authorization:** Requires `users:manage` (ADMIN only).
 - **Request Body:** `{ roles: ['OPERATOR'] }`
 - **Response:** `200 OK` with updated user profile. Creates Audit Record.
 
 ### 4. Query Audit Ledger
+
 - `GET /api/v1/audit-logs`
 - **Authorization:** Requires `audit:read` (ADMIN only).
 - **Query Params:** `page=1&limit=50&resourceType=WORLD&action=FAULT_INJECT`
@@ -398,6 +410,7 @@ Routes in `apps/control` under `/api/v1`.
 ## 9. UI
 
 ### 1. Audit Trail Explorer (`apps/web/src/app/settings/audit/page.tsx`)
+
 - **Spec alignment:** §70 (Tamper-Evident Audit Explorer).
 - **Layout:**
   - Header: "Audit & Security Ledger" with live **"Hash Chain: VERIFIED"** badge (green lock icon).
@@ -409,6 +422,7 @@ Routes in `apps/control` under `/api/v1`.
   - Chain Verification Button: "Run Mathematical Verification" button that recalculates all SHA-256 hashes from genesis.
 
 ### 2. Team & Access Control (`apps/web/src/app/settings/team/page.tsx`)
+
 - **Spec alignment:** §71 (User Roster & Access Management).
 - **Layout:**
   - User list table showing name, email, assigned roles, status, and last active timestamp.
@@ -437,6 +451,7 @@ Routes in `apps/control` under `/api/v1`.
 ## 11. Testing
 
 ### Unit tests (`packages/security/tests/unit`)
+
 - `argon2.test.ts`: Verify password hashing and rejection of invalid passwords.
 - `hash-chain.test.ts`:
   - Assert 100 consecutive records produce a valid mathematical chain.
@@ -444,6 +459,7 @@ Routes in `apps/control` under `/api/v1`.
 - `token-bucket.test.ts`: Assert rate limit drops requests when bucket is empty and refills accurately over time.
 
 ### Integration tests (`apps/control/tests/integration/security`)
+
 - `rbac-guard.test.ts`:
   - Authenticate as `VIEWER`; assert `POST /faults` returns 403 Forbidden with `AppError.forbidden()`.
   - Authenticate as `OPERATOR`; assert `POST /faults` succeeds with 200 OK.
@@ -465,7 +481,10 @@ The gate test executes the following automated checks:
 assert(sessionRevokedImmediately, 'Assertion 1: Revoked session receives immediate 401');
 
 // Assertion 2: RBAC permissions strictly forbid unauthorized actions
-assert(viewerBlockedFromFaultInjection, 'Assertion 2: VIEWER role cannot inject faults (403 Forbidden)');
+assert(
+  viewerBlockedFromFaultInjection,
+  'Assertion 2: VIEWER role cannot inject faults (403 Forbidden)',
+);
 
 // Assertion 3: Cryptographic Audit Hash Chain verifies 100% intact from genesis
 assert(chainIntegrityVerified, 'Assertion 3: Audit ledger hash chain is mathematically intact');
@@ -483,7 +502,7 @@ assert(rateLimiterThrottlesAbuse, 'Assertion 5: Adaptive rate limiter throttles 
 
 1. **Storing plaintext session tokens in Redis or DB:** If Redis is inspected or dumped, tokens can be stolen.
    Always store `SHA256(token)` in storage and only transmit the plaintext token in the cookie.
-2. **Missing audit records on failed mutating attempts:** Security auditors want to know who *attempted*
+2. **Missing audit records on failed mutating attempts:** Security auditors want to know who _attempted_
    unauthorized actions as well as who succeeded. Log both.
 3. **Audit chain concurrency race:** Multiple concurrent transactions writing audit logs can conflict on `seq_num`
    or `prev_hash`. Use Postgres advisory locks (`pg_advisory_xact_lock`) around audit hash generation.

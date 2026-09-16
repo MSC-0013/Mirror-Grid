@@ -1,10 +1,4 @@
-export type ServiceType =
-  | 'HTTP'
-  | 'GRPC'
-  | 'WORKER'
-  | 'DATABASE'
-  | 'CACHE'
-  | 'MESSAGE_BROKER';
+export type ServiceType = 'HTTP' | 'GRPC' | 'WORKER' | 'DATABASE' | 'CACHE' | 'MESSAGE_BROKER';
 
 export type ServiceStatus =
   | 'STOPPED'

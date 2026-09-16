@@ -1,10 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { simulationService, SimulationService } from './simulation.service.js';
-import {
-  createRunSchema,
-  runIdParamSchema,
-  getMetricsQuerySchema,
-} from './simulation.schema.js';
+import { createRunSchema, runIdParamSchema, getMetricsQuerySchema } from './simulation.schema.js';
 
 export class SimulationController {
   constructor(private readonly service: SimulationService = simulationService) {}

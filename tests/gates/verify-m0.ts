@@ -33,7 +33,12 @@ async function checkNoMockDataRule(dir: string): Promise<string[]> {
   function scan(currentDir: string) {
     const entries = fs.readdirSync(currentDir, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === '.next' || entry.name === 'dist') {
+      if (
+        entry.name === 'node_modules' ||
+        entry.name === '.git' ||
+        entry.name === '.next' ||
+        entry.name === 'dist'
+      ) {
         continue;
       }
       const fullPath = path.join(currentDir, entry.name);
@@ -54,7 +59,8 @@ async function runGate() {
   console.log('   MIRRORGRID M0: Foundation & Walking Skeleton Gate');
   console.log('====================================================\n');
 
-  const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/mirrorgrid';
+  const connectionString =
+    process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/mirrorgrid';
 
   // 1. Check PostgreSQL connectivity
   console.log('[1/9] Checking PostgreSQL connectivity on port 5432...');
@@ -158,13 +164,20 @@ async function runGate() {
   });
   assert.strictEqual(listRes.statusCode, 200);
   const listJson = JSON.parse(listRes.payload);
-  assert(listJson.data.some((w: { name: string }) => w.name === 'Metro-01'), 'Created world must appear in list');
+  assert(
+    listJson.data.some((w: { name: string }) => w.name === 'Metro-01'),
+    'Created world must appear in list',
+  );
   console.log('✓ Auth & World creation lifecycle verified successfully.');
 
   // 9. Check OpenAPI and No-Mock Rule
   console.log('\n[9/9] Verifying OpenAPI documentation and No-Mock Rule...');
   const openapiRes = await gateway.inject({ method: 'GET', url: '/openapi.json' });
-  assert.strictEqual(openapiRes.statusCode, 200, 'OpenAPI document must be served at /openapi.json');
+  assert.strictEqual(
+    openapiRes.statusCode,
+    200,
+    'OpenAPI document must be served at /openapi.json',
+  );
   const openapiJson = JSON.parse(openapiRes.payload);
   assert.strictEqual(openapiJson.openapi, '3.1.0');
 
@@ -173,7 +186,7 @@ async function runGate() {
   assert.strictEqual(
     mockViolations.length,
     0,
-    `No-Mock Rule VIOLATION: Found mock files: ${mockViolations.join(', ')}`
+    `No-Mock Rule VIOLATION: Found mock files: ${mockViolations.join(', ')}`,
   );
   console.log('✓ OpenAPI 3.1 served at /openapi.json');
   console.log('✓ No-Mock Rule PASSED (zero mock-data.ts files found).');
@@ -187,7 +200,7 @@ async function runGate() {
   console.log('====================================================');
 }
 
-runGate().catch(err => {
+runGate().catch((err) => {
   console.error('\n✗ GATE VERIFICATION FAILED:\n', err);
   process.exit(1);
 });

@@ -5,6 +5,7 @@
 This milestone is the culmination of Tier 1 and marks the **v0.1 Release** of MIRRORGRID.
 
 Up to this point, MIRRORGRID has built the foundational pieces:
+
 - The domain model and topology graph (M01).
 - The deterministic logical simulator with virtual clock and state hashes (M02).
 - The container runtime peer running real Docker containers (M03).
@@ -12,8 +13,9 @@ Up to this point, MIRRORGRID has built the foundational pieces:
 
 The **Experiment Engine** synthesizes these into a cohesive scientific instrument. In MIRRORGRID, an
 experiment is not a random bash script that kills containers; it is a structured scientific hypothesis:
-> *"If Payments latency degrades to 400ms, does the Orders circuit breaker trip before Orders thread pool
-> saturates, or does retry amplification propagate a cascading collapse back to the API Gateway?"*
+
+> _"If Payments latency degrades to 400ms, does the Orders circuit breaker trip before Orders thread pool
+> saturates, or does retry amplification propagate a cascading collapse back to the API Gateway?"_
 
 An experiment manages the entire experimental lifecycle: measuring baseline performance, executing
 scheduled fault injections, evaluating automated anomaly detectors (recording exact MTTD and MTTR),
@@ -39,6 +41,7 @@ of the portfolio artifact.
 ## 3. Scope
 
 ### In scope
+
 - Experiment lifecycle state machine (`DRAFT -> SCHEDULED -> RUNNING_BASELINE -> FAULT_INJECTED -> RECOVERING -> COMPLETED / ABORTED`).
 - Frozen Experiment Configuration: Deep immutable snapshot of topology, workload, faults, and detector rules.
 - Automated Anomaly Detectors: Sliding window rules measuring exact **MTTD** (Mean Time to Detect)
@@ -51,6 +54,7 @@ of the portfolio artifact.
 - Gate script `npm run verify:flagship`: The v0.1 release certification suite.
 
 ### Explicitly out of scope
+
 - Distributed async job queue and worker leases (M07 — in M05, experiment runs execute via in-memory orchestrator).
 - Kafka-based CQRS event publishing (M08).
 - Multi-run statistical regression analysis (M10).
@@ -97,6 +101,7 @@ An experiment transitions through a strict, auditable state machine with optimis
 ### The Frozen Configuration Pattern
 
 When an experiment starts, its complete specification is serialized into `frozen_config` JSONB:
+
 - Full topology graph (services, edges, capacities).
 - Workload profile (RPS curve, payload distributions).
 - Fault specifications and schedules.
@@ -109,6 +114,7 @@ because it executes solely from `frozen_config`.
 ### MTTD and MTTR Definitions
 
 MIRRORGRID treats reliability metrics with mathematical precision:
+
 - **MTTD (Mean Time to Detect):**
   $$\text{MTTD} = T_{\text{first\_detector\_trigger}} - T_{\text{fault\_injected}}$$
   Measured in integer microseconds. If a fault is injected at $T = 15.000\text{s}$ and the error rate detector
@@ -147,6 +153,7 @@ The flagship scenario is MIRRORGRID’s headline demonstration:
 ```
 
 #### Run A: Without Resilience Primitives (The Collapse)
+
 1. At $T=15\text{s}$, Payments latency jumps from 20ms to 420ms.
 2. Orders concurrency pool (64 slots) fills up in 150ms ($64 / 0.42\text{s} = 152\text{ req/s}$ capacity vs 200 offered).
 3. Orders queue saturates; Orders begins dropping requests with 504.
@@ -155,6 +162,7 @@ The flagship scenario is MIRRORGRID’s headline demonstration:
 6. Gateway thread pool exhausts; entire system collapses into complete outage.
 
 #### Run B: With MIRRORGRID Resilience Primitives (The Shield)
+
 1. At $T=15\text{s}$, Payments latency jumps to 420ms.
 2. Orders Circuit Breaker records failure rate > 50% and trips to `OPEN` at $T=17.2\text{s}$ ($\text{MTTD} = 2.2\text{s}$).
 3. Subsequent Orders -> Payments calls fast-fail in $0.1\text{ms}$ with degraded fallback response.
@@ -242,6 +250,7 @@ CREATE INDEX idx_exp_events_timeline ON experiment_events(run_id, sim_time_micro
 ```
 
 ### Index rationale
+
 - `idx_experiments_world`: Powers the experiment catalog view for a world.
 - `uq_exp_run_number`: Enforces sequential execution numbering per experiment.
 - `idx_exp_events_timeline`: Enables smooth playback and incident log reconstruction in chronological order.
@@ -369,6 +378,7 @@ export interface DetectorEngine {
 Routes in `apps/control` under `/api/v1/worlds/:worldId/experiments`.
 
 ### 1. Create Experiment
+
 - `POST /api/v1/worlds/:worldId/experiments`
 - **Request Body (zod schema):**
   ```typescript
@@ -379,33 +389,39 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId/experiments`.
     faultDurationMicros: z.number().int().positive().default(30_000_000),
     cooldownDurationMicros: z.number().int().positive().default(15_000_000),
     faultSpecIds: z.array(z.string().uuid()).min(1),
-    detectors: z.array(z.object({
-      name: z.string(),
-      detectorType: z.enum(['ERROR_RATE', 'P99_LATENCY', 'CIRCUIT_TRIPPED', 'QUEUE_SATURATION']),
-      targetServiceId: z.string().uuid().optional(),
-      targetEdgeId: z.string().uuid().optional(),
-      thresholdValue: z.number(),
-      windowDurationMicros: z.number().int().positive().default(5_000_000),
-    })),
+    detectors: z.array(
+      z.object({
+        name: z.string(),
+        detectorType: z.enum(['ERROR_RATE', 'P99_LATENCY', 'CIRCUIT_TRIPPED', 'QUEUE_SATURATION']),
+        targetServiceId: z.string().uuid().optional(),
+        targetEdgeId: z.string().uuid().optional(),
+        thresholdValue: z.number(),
+        windowDurationMicros: z.number().int().positive().default(5_000_000),
+      }),
+    ),
   });
   ```
 - **Response:** `201 Created` with created experiment details.
 
 ### 2. Launch Experiment Run
+
 - `POST /api/v1/worlds/:worldId/experiments/:experimentId/start`
 - **Request Body:** `{ runtimeMode: 'LOGICAL' | 'CONTAINER' | 'HYBRID', seed?: string }`
 - **Response:** `202 Accepted` with `{ runId: string, status: 'WARMUP', runNumber: number }`.
 
 ### 3. Get Experiment Live Status
+
 - `GET /api/v1/worlds/:worldId/experiments/:experimentId/status`
 - **Response:** `200 OK` with phase, current sim time, active faults, and detector statuses.
 
 ### 4. Abort Experiment Run
+
 - `POST /api/v1/worlds/:worldId/experiments/:experimentId/abort`
 - **Request Body:** `{ reason: string }`
 - **Response:** `200 OK` with `{ status: 'ABORTED', abortedAtMicros: string }`.
 
 ### 5. Get Comprehensive Report
+
 - `GET /api/v1/worlds/:worldId/experiments/:experimentId/runs/:runNumber/report`
 - **Response:** `200 OK` with complete telemetry, state hash, MTTD/MTTR results, and timeline events.
 
@@ -414,6 +430,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId/experiments`.
 ## 9. UI
 
 ### 1. Live Experiment Hero Screen (`apps/web/src/app/worlds/[worldId]/experiments/[id]/page.tsx`)
+
 - **Spec alignment:** §61 (Live Experiment Monitor), §62 (Incident Replay & Diagnostics).
 - **Layout:**
   - **Top Navigation & HUD:**
@@ -457,15 +474,18 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId/experiments`.
 ## 11. Testing
 
 ### Unit tests (`packages/experiments/tests/unit`)
+
 - `detector-engine.test.ts`: Test sliding window evaluator triggers within tolerance and calculates exact microsecond MTTD.
 - `freeze.test.ts`: Assert `frozen_config` snapshot is byte-for-byte deterministic across repeated runs.
 - `state-machine.test.ts`: Assert invalid state transitions (e.g. COMPLETED -> FAULT) throw `AppError.conflict()`.
 
 ### Integration tests (`apps/control/tests/integration/experiments`)
+
 - Test full experiment execution lifecycle via REST API.
 - Test that aborting an experiment immediately cancels active faults and records the abort event in Postgres.
 
 ### E2E Flagship Verification (`tests/e2e/flagship.test.ts`)
+
 - Execute Flagship Scenario Run A (Unprotected): Assert Gateway thread exhaustion and cascading collapse.
 - Execute Flagship Scenario Run B (Protected): Assert circuit breaker trips, retry budget caps traffic, and Gateway survives.
 
@@ -481,19 +501,31 @@ This script executes the complete Flagship Scenario in fast simulation mode and 
 // tests/gates/verify-flagship.ts
 
 // Assertion 1: Unprotected run exhibits catastrophic retry amplification (> 2.5x traffic)
-assert(unprotectedAmplification >= 2.5, 'Assertion 1: Retry amplification observed in unprotected graph');
+assert(
+  unprotectedAmplification >= 2.5,
+  'Assertion 1: Retry amplification observed in unprotected graph',
+);
 
 // Assertion 2: Protected run trips circuit breaker to OPEN within 3 seconds of fault injection
-assert(breakerTripped && mttdSeconds <= 3.0, 'Assertion 2: Circuit breaker trips rapidly (MTTD <= 3s)');
+assert(
+  breakerTripped && mttdSeconds <= 3.0,
+  'Assertion 2: Circuit breaker trips rapidly (MTTD <= 3s)',
+);
 
 // Assertion 3: Retry budget caps retry amplification under 1.15x during active failure
 assert(protectedAmplification <= 1.15, 'Assertion 3: Retry budget strictly prevents traffic storm');
 
 // Assertion 4: System cleanly recovers after fault removal with verifiable MTTR
-assert(systemRecovered && mttrSeconds <= 10.0, 'Assertion 4: System recovers to baseline (MTTR <= 10s)');
+assert(
+  systemRecovered && mttrSeconds <= 10.0,
+  'Assertion 4: System recovers to baseline (MTTR <= 10s)',
+);
 
 // Assertion 5: Repeated run with identical seed reproduces exact canonical state hash
-assert(run1.stateHash === run2.stateHash, 'Assertion 5: Bit-for-bit reproducible state hash across runs');
+assert(
+  run1.stateHash === run2.stateHash,
+  'Assertion 5: Bit-for-bit reproducible state hash across runs',
+);
 ```
 
 ---

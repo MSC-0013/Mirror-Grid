@@ -47,7 +47,9 @@ export default function LoginPage() {
   }
 
   return (
-    <div style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+    <div
+      style={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+    >
       <div className="card" style={{ width: '100%', maxWidth: 440, padding: 32 }}>
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <div
@@ -87,7 +89,10 @@ export default function LoginPage() {
         >
           <button
             type="button"
-            onClick={() => { setIsSignUp(false); setError(null); }}
+            onClick={() => {
+              setIsSignUp(false);
+              setError(null);
+            }}
             style={{
               flex: 1,
               padding: '6px 0',
@@ -103,7 +108,10 @@ export default function LoginPage() {
           </button>
           <button
             type="button"
-            onClick={() => { setIsSignUp(true); setError(null); }}
+            onClick={() => {
+              setIsSignUp(true);
+              setError(null);
+            }}
             style={{
               flex: 1,
               padding: '6px 0',
@@ -146,7 +154,7 @@ export default function LoginPage() {
                   type="text"
                   required
                   value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
+                  onChange={(e) => setDisplayName(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
@@ -164,7 +172,7 @@ export default function LoginPage() {
                   type="text"
                   required
                   value={organizationName}
-                  onChange={e => setOrganizationName(e.target.value)}
+                  onChange={(e) => setOrganizationName(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
@@ -184,7 +192,7 @@ export default function LoginPage() {
               type="email"
               required
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               style={{
                 width: '100%',
                 padding: '8px 12px',
@@ -203,7 +211,7 @@ export default function LoginPage() {
               required
               minLength={8}
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               style={{
                 width: '100%',
                 padding: '8px 12px',

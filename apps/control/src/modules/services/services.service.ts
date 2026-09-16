@@ -45,9 +45,11 @@ export class ServicesService {
     }
 
     if (input.status && input.status !== current.status) {
-      if (!isValidServiceTransition(current.status as ServiceStatus, input.status as ServiceStatus)) {
+      if (
+        !isValidServiceTransition(current.status as ServiceStatus, input.status as ServiceStatus)
+      ) {
         throw AppError.badRequest(
-          `Invalid service status transition from '${current.status}' to '${input.status}'`
+          `Invalid service status transition from '${current.status}' to '${input.status}'`,
         );
       }
     }
@@ -69,7 +71,7 @@ export class ServicesService {
     const dependentCount = await this.repo.countDependents(id);
     if (dependentCount > 0) {
       throw AppError.conflict(
-        `Cannot delete Service '${service.name}' because ${dependentCount} dependent(s) rely on it.`
+        `Cannot delete Service '${service.name}' because ${dependentCount} dependent(s) rely on it.`,
       );
     }
 

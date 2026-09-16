@@ -27,6 +27,7 @@ is why this milestone sits before M03, M04, and M05.
 ## 3. Scope
 
 ### In scope
+
 - packages/sim: VirtualClock, event heap, RealtimeDriver, FastDriver, splittable RNG,
   bounded-concurrency queueing model, per-second metrics with raw samples, canonical state hash
 - packages/db: migration 003_runtime.sql (experiment_metrics time-series table)
@@ -34,6 +35,7 @@ is why this milestone sits before M03, M04, and M05.
 - apps/web: live metric cards on world overview (polling, WebSocket arrives M08)
 
 ### Explicitly out of scope
+
 - ContainerRuntimeAdapter (M03)
 - Reliability primitives: CircuitBreaker, RetryPolicy, Bulkhead (M04) — the queueing model
   at M02 uses simplified admission, not full breaker logic. Breakers are added in M04.
@@ -71,7 +73,8 @@ IEEE-754 `+ - * /` are reproducible across V8 versions and platforms. `Math.log`
 reorder two heap events, and diverge everything downstream.
 
 **Resolution:** distributions are sampled from pre-generated integer inverse-CDF tables, not computed.
-- Table generation runs offline and may use `Math.log` freely; the *output integers* are the contract.
+
+- Table generation runs offline and may use `Math.log` freely; the _output integers_ are the contract.
 - The table is hashed into `engine_version`; for user-supplied parameters the table bytes are stored
   in the run's frozen config so a replay uses the original table rather than regenerating it.
 - Time is integer microseconds throughout (exact below 2^53 = 285 years of range).
@@ -95,7 +98,7 @@ unchanged. This is tested directly (gate assertion 3).
 
 ### Virtual clock — two drivers, one engine
 
-A binary-heap event queue ordered by `(time, priority, sequence)` — a *total* order, so simultaneous
+A binary-heap event queue ordered by `(time, priority, sequence)` — a _total_ order, so simultaneous
 events are never ambiguously ordered. The `sequence` field breaks ties deterministically.
 
 - **RealtimeDriver:** paces advancement to 1x wall clock for the live UI. When it falls behind
@@ -103,7 +106,7 @@ events are never ambiguously ordered. The `sequence` field breaks ties determini
   reorders, coalesces or skips events. Lag is surfaced in the UI as a honesty indicator.
 - **FastDriver:** drains the heap as fast as possible for replay and CI (~1000x difference in runtime).
 
-**Invariant — the realtime driver controls the *rate* of advancement and nothing else.**
+**Invariant — the realtime driver controls the _rate_ of advancement and nothing else.**
 VirtualClock remains the sole authority on simulation time. No wall-clock value ever enters model
 state, influences a branch, or reaches the hash. Driver equivalence is asserted directly by
 gate 7 (same run, same hash under both drivers).
@@ -121,10 +124,10 @@ independently and the root is the hash of the sorted `(key, componentHash)` pair
 
 ### Metric representation (two modes, honestly labelled)
 
-| Mode | Storage | Quantile quality |
-|---|---|---|
-| LOGICAL, active or < 7 days old | Raw latency samples `int[]` of microseconds | **Exact** P50/P95/P99/P99.9 |
-| CONTAINER / platform / > 7 days old | Log-linear histogram bucket counts `int[]` | **Bounded relative error** (±1% with gamma=1.02), mergeable |
+| Mode                                | Storage                                     | Quantile quality                                            |
+| ----------------------------------- | ------------------------------------------- | ----------------------------------------------------------- |
+| LOGICAL, active or < 7 days old     | Raw latency samples `int[]` of microseconds | **Exact** P50/P95/P99/P99.9                                 |
+| CONTAINER / platform / > 7 days old | Log-linear histogram bucket counts `int[]`  | **Bounded relative error** (±1% with gamma=1.02), mergeable |
 
 LOGICAL mode retains raw samples because volume is controlled and deterministic, and exactness is
 what makes two replayed runs comparable at the quantile level. The histogram's real virtue is
@@ -308,8 +311,8 @@ export class SimEngine {
 export interface ICDFTable {
   readonly name: string;
   readonly params: Record<string, number>;
-  readonly buckets: Int32Array;   // microseconds
-  readonly hash: string;          // SHA-256 of buckets — included in engine_version
+  readonly buckets: Int32Array; // microseconds
+  readonly hash: string; // SHA-256 of buckets — included in engine_version
   sample(rng: SubStream): number; // returns integer microseconds
 }
 ```
@@ -347,6 +350,7 @@ GET    /api/v1/simulation/runs/:runId/metrics
 ### World overview — live metric cards (spec §14)
 
 At M02, the world overview gains real-time metric cards populated by polling `/metrics`:
+
 - P95 latency (labelled EXACT or ESTIMATED)
 - Error rate
 - Throughput (req/s)
@@ -358,6 +362,7 @@ Cards update every 2 seconds (polling). WebSocket arrives in M08.
 Orders' P95 card rises. Gateway's throughput card drops. No scripting — it falls out of the model.
 
 ### Topology during a run
+
 - Nodes animate: slot utilization shown as a fill ring (0% = empty, 100% = saturated = red)
 - Edge thickness increases with traffic, dims to gray when a circuit is OPEN
 
@@ -385,6 +390,7 @@ Orders' P95 card rises. Gateway's throughput card drops. No scripting — it fal
 ## 11. Testing
 
 ### Unit (packages/sim — all deterministic)
+
 - VirtualClock: schedule 100 events at various times -> drains in correct order
 - EventHeap: simultaneous events ordered by (priority, sequence) not by insertion
 - Splittable RNG:
@@ -394,7 +400,7 @@ Orders' P95 card rises. Gateway's throughput card drops. No scripting — it fal
 - BoundedConcurrencyService:
   - tryAdmit returns false when at capacity
   - release decrements active_slots
-  - Occupancy * concurrency_limit >= capacity (Little's Law sanity check)
+  - Occupancy \* concurrency_limit >= capacity (Little's Law sanity check)
 - LogLinearHistogram:
   - add(v) + quantile(0.95) matches brute-force quantile within 1.02x
   - merge: sum of two histograms yields same quantile as merged raw samples
@@ -403,6 +409,7 @@ Orders' P95 card rises. Gateway's throughput card drops. No scripting — it fal
 - WorkloadGenerator: RAMP_UP at t=0 -> base_rate; at t=duration -> peak_rate
 
 ### Determinism tests (the gate)
+
 - Same seed, two runs -> identical state hashes (100 trial seeds)
 - Different seed -> different hash
 - Substream isolation (new stream, old streams unchanged)
@@ -412,6 +419,7 @@ Orders' P95 card rises. Gateway's throughput card drops. No scripting — it fal
 - FastDriver == RealtimeDriver: same hash
 
 ### Integration
+
 - POST /simulation/runs -> run created in DB
 - Start + stop -> status transitions correctly
 - Metrics written to experiment_metrics; quantile computation matches raw samples

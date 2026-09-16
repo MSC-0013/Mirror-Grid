@@ -48,7 +48,11 @@ export class FastDriver implements ClockDriver {
       }
 
       const nextTime = clock.peekNextTimeUs();
-      if (this.maxVirtualTimeUs !== undefined && nextTime !== null && nextTime > this.maxVirtualTimeUs) {
+      if (
+        this.maxVirtualTimeUs !== undefined &&
+        nextTime !== null &&
+        nextTime > this.maxVirtualTimeUs
+      ) {
         break;
       }
 
@@ -56,7 +60,11 @@ export class FastDriver implements ClockDriver {
       let count = 0;
       while (this.running && !this.paused && clock.hasEvents() && count < this.batchSize) {
         const peekTime = clock.peekNextTimeUs();
-        if (this.maxVirtualTimeUs !== undefined && peekTime !== null && peekTime > this.maxVirtualTimeUs) {
+        if (
+          this.maxVirtualTimeUs !== undefined &&
+          peekTime !== null &&
+          peekTime > this.maxVirtualTimeUs
+        ) {
           this.running = false;
           break;
         }

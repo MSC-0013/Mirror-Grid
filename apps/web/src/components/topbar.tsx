@@ -64,8 +64,8 @@ export function Topbar() {
     health?.status === 'HEALTHY'
       ? 'badge-healthy'
       : health?.status === 'DEGRADED'
-      ? 'badge-degraded'
-      : 'badge-unhealthy';
+        ? 'badge-degraded'
+        : 'badge-unhealthy';
 
   return (
     <header className="topbar">
@@ -76,7 +76,9 @@ export function Topbar() {
             System Status:
           </span>
           <span className={`badge ${badgeClass}`}>
-            <span style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'currentColor' }} />
+            <span
+              style={{ width: 6, height: 6, borderRadius: '50%', backgroundColor: 'currentColor' }}
+            />
             {health?.status || 'CHECKING'}
           </span>
         </div>

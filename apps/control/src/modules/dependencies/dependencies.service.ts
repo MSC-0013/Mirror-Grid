@@ -21,7 +21,9 @@ export class DependenciesService {
   public async createDependency(worldId: string, input: CreateDependencyInput) {
     // 1. Prevent self-edges
     if (input.sourceServiceId === input.targetServiceId) {
-      throw AppError.badRequest('Self-edges are not allowed: source and target service must differ');
+      throw AppError.badRequest(
+        'Self-edges are not allowed: source and target service must differ',
+      );
     }
 
     // 2. Verify both services exist within this world
@@ -29,17 +31,21 @@ export class DependenciesService {
     const serviceMap = new Map(services.map((s) => [s.id, s.name]));
 
     if (!serviceMap.has(input.sourceServiceId)) {
-      throw AppError.badRequest(`Source service '${input.sourceServiceId}' does not belong to this World`);
+      throw AppError.badRequest(
+        `Source service '${input.sourceServiceId}' does not belong to this World`,
+      );
     }
     if (!serviceMap.has(input.targetServiceId)) {
-      throw AppError.badRequest(`Target service '${input.targetServiceId}' does not belong to this World`);
+      throw AppError.badRequest(
+        `Target service '${input.targetServiceId}' does not belong to this World`,
+      );
     }
 
     // 3. Check for existing duplicate edge
     const existing = await this.repo.findByEndpoints(
       worldId,
       input.sourceServiceId,
-      input.targetServiceId
+      input.targetServiceId,
     );
     if (existing) {
       throw AppError.conflict('A dependency between these services already exists');

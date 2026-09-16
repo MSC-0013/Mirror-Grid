@@ -154,7 +154,7 @@ export function dependentsOf(graph: DependencyGraph, serviceId: ServiceId): Set<
 export function criticalPath(
   graph: DependencyGraph,
   start: ServiceId,
-  end: ServiceId
+  end: ServiceId,
 ): ServiceId[] {
   if (start === end) {
     return [start];

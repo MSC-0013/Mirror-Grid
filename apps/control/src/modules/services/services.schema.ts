@@ -22,7 +22,14 @@ export const serviceStatusEnum = z.enum([
 ]);
 
 export const createServiceSchema = z.object({
-  name: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/, 'Service name must contain only letters, numbers, underscores, or hyphens'),
+  name: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      'Service name must contain only letters, numbers, underscores, or hyphens',
+    ),
   description: z.string().max(256).optional(),
   serviceType: serviceTypeEnum.default('HTTP'),
   targetInstances: z.number().int().min(1).max(100).default(1),
@@ -32,7 +39,12 @@ export const createServiceSchema = z.object({
 });
 
 export const updateServiceSchema = z.object({
-  name: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/).optional(),
+  name: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(/^[a-zA-Z0-9_-]+$/)
+    .optional(),
   description: z.string().max(256).optional(),
   serviceType: serviceTypeEnum.optional(),
   status: serviceStatusEnum.optional(),

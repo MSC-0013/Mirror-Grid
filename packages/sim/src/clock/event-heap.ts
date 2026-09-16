@@ -70,8 +70,8 @@ export class EventHeap {
     let current = index;
     const length = this.heap.length;
     while ((current << 1) + 1 < length) {
-      let left = (current << 1) + 1;
-      let right = left + 1;
+      const left = (current << 1) + 1;
+      const right = left + 1;
       let smallest = current;
 
       if (compareSimEvents(this.heap[left], this.heap[smallest]) < 0) {

@@ -29,7 +29,7 @@ export function paginatedResult<T>(
   data: T[],
   total: number,
   page: number,
-  limit: number
+  limit: number,
 ): PaginatedResult<T> {
   return {
     data,

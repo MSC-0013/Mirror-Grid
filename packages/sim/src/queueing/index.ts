@@ -6,11 +6,7 @@ export {
   type ReleaseOutcome,
   type ServiceModelSnapshot,
 } from './service-model.js';
-export {
-  CascadeDetector,
-  type ServicePressure,
-  type PressureLevel,
-} from './cascade.js';
+export { CascadeDetector, type ServicePressure, type PressureLevel } from './cascade.js';
 export {
   SimScheduler,
   type RequestOutcome,

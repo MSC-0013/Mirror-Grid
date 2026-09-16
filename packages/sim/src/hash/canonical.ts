@@ -109,7 +109,7 @@ export class CanonicalSerializer {
       const v = values[i];
       if (!Number.isInteger(v)) {
         throw new TypeError(
-          `CanonicalSerializer.intArray received a non-integer at index ${i}: ${v}`
+          `CanonicalSerializer.intArray received a non-integer at index ${i}: ${v}`,
         );
       }
       body.writeInt32LE(v, i * 4);
@@ -131,7 +131,7 @@ export class CanonicalSerializer {
   /** Entries are emitted in UTF-8 byte order regardless of insertion order. */
   sortedMap<V>(
     entries: ReadonlyMap<string, V> | Record<string, V>,
-    write: (s: CanonicalSerializer, value: V) => void
+    write: (s: CanonicalSerializer, value: V) => void,
   ): this {
     const pairs: Array<[string, V]> =
       entries instanceof Map ? Array.from(entries.entries()) : Object.entries(entries);
@@ -152,7 +152,7 @@ export class CanonicalSerializer {
 
   optional<T>(
     value: T | undefined | null,
-    write: (s: CanonicalSerializer, value: T) => void
+    write: (s: CanonicalSerializer, value: T) => void,
   ): this {
     if (value === undefined || value === null) {
       return this.tag(Tag.NULL);
@@ -174,7 +174,7 @@ export class CanonicalSerializer {
   float(_value: never): never {
     throw new TypeError(
       'CanonicalSerializer.float() is unreachable by design: quantize floats to integers ' +
-        'at the configuration boundary before they can influence simulation state.'
+        'at the configuration boundary before they can influence simulation state.',
     );
   }
 

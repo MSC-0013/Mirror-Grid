@@ -14,10 +14,7 @@ export function getCorrelationContext(): CorrelationContext | undefined {
   return storage.getStore();
 }
 
-export function runWithCorrelationContext<T>(
-  context: Partial<CorrelationContext>,
-  fn: () => T
-): T {
+export function runWithCorrelationContext<T>(context: Partial<CorrelationContext>, fn: () => T): T {
   const fullContext: CorrelationContext = {
     requestId: context.requestId || randomUUID(),
     correlationId: context.correlationId || context.requestId || randomUUID(),

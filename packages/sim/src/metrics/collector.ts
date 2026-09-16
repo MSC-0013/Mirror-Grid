@@ -57,29 +57,19 @@ export class MetricsCollector {
         serviceId,
         secondIndex * ONE_SECOND_US,
         this.wallClockMs(),
-        this.retainSamples
+        this.retainSamples,
       );
       this.buckets.set(key, bucket);
     }
     return bucket;
   }
 
-  recordOutcome(
-    serviceId: string,
-    nowUs: bigint,
-    latencyUs: bigint,
-    failed: boolean
-  ): void {
+  recordOutcome(serviceId: string, nowUs: bigint, latencyUs: bigint, failed: boolean): void {
     this.bucketFor(serviceId, nowUs).record(Number(latencyUs), failed);
   }
 
   /** Sampled at flush time, not per request — these are gauges, not counters. */
-  recordGauges(
-    serviceId: string,
-    nowUs: bigint,
-    queueDepth: number,
-    activeSlots: number
-  ): void {
+  recordGauges(serviceId: string, nowUs: bigint, queueDepth: number, activeSlots: number): void {
     const bucket = this.bucketFor(serviceId, nowUs);
     bucket.queueDepth = queueDepth;
     bucket.activeSlots = activeSlots;
@@ -91,7 +81,7 @@ export class MetricsCollector {
     const flushed: MetricSampleRow[] = [];
 
     for (const [key, bucket] of Array.from(this.buckets.entries()).sort(([a], [b]) =>
-      a < b ? -1 : a > b ? 1 : 0
+      a < b ? -1 : a > b ? 1 : 0,
     )) {
       if (bucket.virtualTimeUs / ONE_SECOND_US < currentSecond) {
         this.buckets.delete(key);
@@ -106,7 +96,7 @@ export class MetricsCollector {
   flushAll(): MetricSampleRow[] {
     const rows: MetricSampleRow[] = [];
     for (const [key, bucket] of Array.from(this.buckets.entries()).sort(([a], [b]) =>
-      a < b ? -1 : a > b ? 1 : 0
+      a < b ? -1 : a > b ? 1 : 0,
     )) {
       this.buckets.delete(key);
       this.completed.push(bucket);
@@ -123,7 +113,7 @@ export class MetricsCollector {
           ? Number(a.virtualTimeUs - b.virtualTimeUs)
           : a.serviceId < b.serviceId
             ? -1
-            : 1
+            : 1,
       )
       .map(toRow);
   }

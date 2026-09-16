@@ -82,7 +82,7 @@ describe('VirtualClock', () => {
     assertEqual(
       order.join(','),
       'high-first,high-second,low',
-      'priority must beat insertion order; equal priority must keep insertion order'
+      'priority must beat insertion order; equal priority must keep insertion order',
     );
   });
 
@@ -92,7 +92,7 @@ describe('VirtualClock', () => {
     clock.drain();
     assertThrows(
       () => clock.schedule({ timeUs: 50n, priority: 0, type: 'T', execute: () => {} }),
-      'scheduling before now must throw'
+      'scheduling before now must throw',
     );
   });
 });
@@ -208,7 +208,7 @@ describe('BoundedConcurrencyService', () => {
     assertEqual(
       Number(svc.getSnapshot().busyUsAccumulated),
       900_000,
-      'occupancy must cover the entire span'
+      'occupancy must cover the entire span',
     );
   });
 
@@ -233,7 +233,7 @@ describe('BoundedConcurrencyService', () => {
     assertClose(degradedCapacity, 71.1, 1, 'degraded capacity');
     assert(
       healthyCapacity / degradedCapacity > 40,
-      'a 45x capacity collapse must follow from occupancy alone'
+      'a 45x capacity collapse must follow from occupancy alone',
     );
   });
 });
@@ -255,7 +255,7 @@ describe('LogLinearHistogram', () => {
       const errorPct = (Math.abs(estimated - exact) / exact) * 100;
       assert(
         errorPct <= 2.5,
-        `p${p * 100} error ${errorPct.toFixed(2)}% exceeded bound (exact=${exact}, est=${estimated})`
+        `p${p * 100} error ${errorPct.toFixed(2)}% exceeded bound (exact=${exact}, est=${estimated})`,
       );
     }
   });
@@ -342,7 +342,7 @@ describe('CanonicalSerializer', () => {
   it('rejects non-integers in intArray', () => {
     assertThrows(
       () => new CanonicalSerializer().intArray([1, 2.5, 3]),
-      'a float in intArray must throw'
+      'a float in intArray must throw',
     );
   });
 
@@ -362,22 +362,34 @@ describe('CanonicalSerializer', () => {
 
 describe('MerkleHash', () => {
   it('is independent of component insertion order', () => {
-    const forward = new Map([['a', 'aa'.repeat(32)], ['b', 'bb'.repeat(32)]]);
-    const reverse = new Map([['b', 'bb'.repeat(32)], ['a', 'aa'.repeat(32)]]);
+    const forward = new Map([
+      ['a', 'aa'.repeat(32)],
+      ['b', 'bb'.repeat(32)],
+    ]);
+    const reverse = new Map([
+      ['b', 'bb'.repeat(32)],
+      ['a', 'aa'.repeat(32)],
+    ]);
     assertEqual(
       MerkleHash.compute(forward).root,
       MerkleHash.compute(reverse).root,
-      'root must not depend on insertion order'
+      'root must not depend on insertion order',
     );
   });
 
   it('localizes divergence to a single component', () => {
-    const expected = new Map([['service:a', 'aa'.repeat(32)], ['service:b', 'bb'.repeat(32)]]);
-    const actual = new Map([['service:a', 'aa'.repeat(32)], ['service:b', 'cc'.repeat(32)]]);
+    const expected = new Map([
+      ['service:a', 'aa'.repeat(32)],
+      ['service:b', 'bb'.repeat(32)],
+    ]);
+    const actual = new Map([
+      ['service:a', 'aa'.repeat(32)],
+      ['service:b', 'cc'.repeat(32)],
+    ]);
     assertEqual(
       MerkleHash.firstDivergence(expected, actual),
       'service:b',
-      'must name the drifting component'
+      'must name the drifting component',
     );
   });
 
@@ -448,7 +460,7 @@ describe('State hash', () => {
     assertEqual(
       computeStateHash(baseState()).root,
       computeStateHash(baseState()).root,
-      'same state must hash identically'
+      'same state must hash identically',
     );
   });
 
@@ -472,7 +484,7 @@ describe('State hash', () => {
     assertEqual(
       before.components.get('service:orders'),
       after.components.get('service:orders'),
-      'an unrelated service must keep its component hash'
+      'an unrelated service must keep its component hash',
     );
   });
 
@@ -488,7 +500,7 @@ describe('State hash', () => {
     const after = computeStateHash(mutated);
     assert(
       compareStateHashes(before, after).diverged,
-      'RNG position is state: a snapshot omitting it cannot replay'
+      'RNG position is state: a snapshot omitting it cannot replay',
     );
   });
 
@@ -498,7 +510,7 @@ describe('State hash', () => {
     (mutated.services[0] as { queuedRequestIds: string[] }).queuedRequestIds = ['r2', 'r1'];
     assert(
       compareStateHashes(before, computeStateHash(mutated)).diverged,
-      'FIFO order must affect the hash'
+      'FIFO order must affect the hash',
     );
   });
 });
@@ -523,7 +535,7 @@ describe('WorkloadGenerator', () => {
 
   it('RAMP_UP starts at base and ends at peak', () => {
     const g = new WorkloadGenerator(
-      spec({ pattern: 'RAMP_UP', baseRatePerSecond: 0, peakRatePerSecond: 500 })
+      spec({ pattern: 'RAMP_UP', baseRatePerSecond: 0, peakRatePerSecond: 500 }),
     );
     assertEqual(g.rateAt(0n), 0, 'at t=0 -> base');
     assertClose(g.rateAt(5_000_000n), 250, 1, 'halfway -> midpoint');
@@ -532,7 +544,7 @@ describe('WorkloadGenerator', () => {
 
   it('RAMP_DOWN starts at peak and ends at base', () => {
     const g = new WorkloadGenerator(
-      spec({ pattern: 'RAMP_DOWN', baseRatePerSecond: 0, peakRatePerSecond: 500 })
+      spec({ pattern: 'RAMP_DOWN', baseRatePerSecond: 0, peakRatePerSecond: 500 }),
     );
     assertEqual(g.rateAt(0n), 500, 'at t=0 -> peak');
     assertClose(g.rateAt(5_000_000n), 250, 1, 'halfway');
@@ -546,7 +558,7 @@ describe('WorkloadGenerator', () => {
         peakRatePerSecond: 2000,
         intervalUs: 4_000_000n,
         pulseWidthUs: 1_000_000n,
-      })
+      }),
     );
     assertEqual(g.rateAt(3_999_999n), 100, 'before the spike');
     assertEqual(g.rateAt(4_000_000n), 2000, 'at spike onset');
@@ -561,7 +573,7 @@ describe('WorkloadGenerator', () => {
         peakRatePerSecond: 1000,
         intervalUs: 2_000_000n,
         pulseWidthUs: 500_000n,
-      })
+      }),
     );
     assertEqual(g.rateAt(0n), 1000, 'first burst');
     assertEqual(g.rateAt(600_000n), 100, 'between bursts');
@@ -572,7 +584,7 @@ describe('WorkloadGenerator', () => {
     const build = () =>
       new WorkloadGenerator(
         spec({ pattern: 'RANDOM', baseRatePerSecond: 100, peakRatePerSecond: 200 }),
-        new SeedableRng(99n).stream('workload:rate')
+        new SeedableRng(99n).stream('workload:rate'),
       );
     const a = build();
     const b = build();
@@ -585,7 +597,7 @@ describe('WorkloadGenerator', () => {
   it('requires a substream for RANDOM', () => {
     assertThrows(
       () => new WorkloadGenerator(spec({ pattern: 'RANDOM' })),
-      'RANDOM without a seeded stream must throw'
+      'RANDOM without a seeded stream must throw',
     );
   });
 });
@@ -595,16 +607,13 @@ describe('WorkloadGenerator', () => {
 describe('ICDF tables', () => {
   it('match the checked-in manifest (guards against engine float drift)', () => {
     const result = new ICDFRegistry().verifyAgainstManifest(ICDF_MANIFEST);
-    assert(
-      result.ok,
-      `ICDF drift detected:\n${result.ok ? '' : result.mismatches.join('\n')}`
-    );
+    assert(result.ok, `ICDF drift detected:\n${result.ok ? '' : result.mismatches.join('\n')}`);
   });
 
   it('throws on an unknown table rather than silently substituting one', () => {
     assertThrows(
       () => new ICDFRegistry().get('does_not_exist'),
-      'unknown table must throw, never fall back'
+      'unknown table must throw, never fall back',
     );
   });
 

@@ -85,7 +85,10 @@ export default function WorldsPage() {
         </div>
 
         <button
-          onClick={() => { setIsModalOpen(true); setError(null); }}
+          onClick={() => {
+            setIsModalOpen(true);
+            setError(null);
+          }}
           className="btn btn-primary"
         >
           <Plus size={16} />
@@ -126,11 +129,22 @@ export default function WorldsPage() {
             <Globe size={28} />
           </div>
           <h2 style={{ fontSize: 16, fontWeight: 600 }}>No Worlds Created Yet</h2>
-          <p style={{ color: 'var(--color-text-secondary)', maxWidth: 360, marginTop: 4, marginBottom: 20 }}>
-            Provision your first world to begin modeling microservices, defining dependencies, and running experiments.
+          <p
+            style={{
+              color: 'var(--color-text-secondary)',
+              maxWidth: 360,
+              marginTop: 4,
+              marginBottom: 20,
+            }}
+          >
+            Provision your first world to begin modeling microservices, defining dependencies, and
+            running experiments.
           </p>
           <button
-            onClick={() => { setIsModalOpen(true); setError(null); }}
+            onClick={() => {
+              setIsModalOpen(true);
+              setError(null);
+            }}
             className="btn btn-primary"
           >
             <Plus size={16} />
@@ -146,7 +160,7 @@ export default function WorldsPage() {
             gap: 16,
           }}
         >
-          {worlds.map(world => (
+          {worlds.map((world) => (
             <Link
               key={world.id}
               href={`/worlds/${world.id}`}
@@ -160,12 +174,26 @@ export default function WorldsPage() {
               }}
             >
               <div>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                  }}
+                >
                   <h3 style={{ fontSize: 16, fontWeight: 600 }}>{world.name}</h3>
                   <span className="badge badge-idle">{world.status}</span>
                 </div>
 
-                <p style={{ color: 'var(--color-text-secondary)', fontSize: 13, marginTop: 8, minHeight: 38 }}>
+                <p
+                  style={{
+                    color: 'var(--color-text-secondary)',
+                    fontSize: 13,
+                    marginTop: 8,
+                    minHeight: 38,
+                  }}
+                >
                   {world.description || 'No description provided.'}
                 </p>
               </div>
@@ -200,8 +228,15 @@ export default function WorldsPage() {
       {/* Create World Modal */}
       {isModalOpen && (
         <div className="modal-backdrop" onClick={() => setIsModalOpen(false)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: 20,
+              }}
+            >
               <h2 style={{ fontSize: 18, fontWeight: 700 }}>Create New World</h2>
               <button
                 type="button"
@@ -228,7 +263,10 @@ export default function WorldsPage() {
               </div>
             )}
 
-            <form onSubmit={handleCreateWorld} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <form
+              onSubmit={handleCreateWorld}
+              style={{ display: 'flex', flexDirection: 'column', gap: 16 }}
+            >
               <div>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 4 }}>
                   World Name *
@@ -238,7 +276,7 @@ export default function WorldsPage() {
                   required
                   placeholder="e.g. Metro-01"
                   value={name}
-                  onChange={e => setName(e.target.value)}
+                  onChange={(e) => setName(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
@@ -256,7 +294,7 @@ export default function WorldsPage() {
                   placeholder="Scenario description, target architecture, or notes"
                   rows={3}
                   value={description}
-                  onChange={e => setDescription(e.target.value)}
+                  onChange={(e) => setDescription(e.target.value)}
                   style={{
                     width: '100%',
                     padding: '8px 12px',
@@ -271,7 +309,7 @@ export default function WorldsPage() {
                   Runtime Mode
                 </label>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }}>
-                  {(['LOGICAL', 'CONTAINER', 'HYBRID'] as const).map(mode => (
+                  {(['LOGICAL', 'CONTAINER', 'HYBRID'] as const).map((mode) => (
                     <button
                       key={mode}
                       type="button"
@@ -300,11 +338,7 @@ export default function WorldsPage() {
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  disabled={creating}
-                  className="btn btn-primary"
-                >
+                <button type="submit" disabled={creating} className="btn btn-primary">
                   {creating ? 'Creating...' : 'Create World'}
                 </button>
               </div>

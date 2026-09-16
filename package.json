@@ -12,7 +12,8 @@
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev --parallel",
-    "lint": "turbo run lint",
+    "lint": "eslint .",
+    "dep-cruiser": "depcruise --config .dependency-cruiser.cjs packages apps",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:unit": "turbo run test:unit",
@@ -20,16 +21,19 @@
     "verify:m0": "node --import tsx tests/gates/verify-m0.ts",
     "verify:m1": "node --import tsx tests/gates/verify-m1.ts",
     "verify:determinism": "node --import tsx tests/gates/verify-determinism.ts",
+    "status:update": "node --import tsx scripts/update-status-table.ts",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,json,md,css}\""
   },
   "devDependencies": {
     "@types/node": "22.13.9",
+    "dependency-cruiser": "^18.3.1",
     "eslint": "9.22.0",
     "prettier": "3.5.3",
     "tsx": "4.19.3",
     "turbo": "2.10.13",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.70.0"
   },
   "engines": {
     "node": ">=22.0.0",

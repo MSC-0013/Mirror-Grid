@@ -29,11 +29,7 @@ export class WorldsService {
     return world;
   }
 
-  public async createWorld(
-    organizationId: string,
-    createdBy: string,
-    input: CreateWorldInput
-  ) {
+  public async createWorld(organizationId: string, createdBy: string, input: CreateWorldInput) {
     const existing = await this.repo.findByName(organizationId, input.name);
     if (existing) {
       throw AppError.conflict(`A World named '${input.name}' already exists in this organization`);
@@ -42,17 +38,15 @@ export class WorldsService {
     return this.repo.createWorld(organizationId, createdBy, input);
   }
 
-  public async updateWorld(
-    organizationId: string,
-    id: string,
-    input: UpdateWorldInput
-  ) {
+  public async updateWorld(organizationId: string, id: string, input: UpdateWorldInput) {
     const current = await this.getWorld(organizationId, id);
 
     if (input.name && input.name !== current.name) {
       const existing = await this.repo.findByName(organizationId, input.name);
       if (existing) {
-        throw AppError.conflict(`A World named '${input.name}' already exists in this organization`);
+        throw AppError.conflict(
+          `A World named '${input.name}' already exists in this organization`,
+        );
       }
     }
 
@@ -60,7 +54,7 @@ export class WorldsService {
       const allowed = VALID_TRANSITIONS[current.status] || [];
       if (!allowed.includes(input.status)) {
         throw AppError.badRequest(
-          `Invalid status transition from '${current.status}' to '${input.status}'. Allowed transitions: [${allowed.join(', ')}]`
+          `Invalid status transition from '${current.status}' to '${input.status}'. Allowed transitions: [${allowed.join(', ')}]`,
         );
       }
     }

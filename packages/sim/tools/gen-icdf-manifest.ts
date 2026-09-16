@@ -33,7 +33,7 @@ export interface ICDFManifestEntry {
 export const ICDF_MANIFEST: Readonly<Record<string, ICDFManifestEntry>> = ${JSON.stringify(
   manifest,
   null,
-  2
+  2,
 )} as const;
 `;
 

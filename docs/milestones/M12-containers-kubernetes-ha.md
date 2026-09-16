@@ -5,6 +5,7 @@
 In modern cloud-native architectures, microservices do not run as standalone Docker containers on a single
 host; they run inside **Kubernetes** clusters scheduled across heterogeneous compute nodes. In Kubernetes,
 failure modes are fundamentally distinct from single-machine Docker:
+
 - Pods are ephemeral and can be evicted, rescheduled, or OOM-killed at any instant.
 - Rolling updates introduce mixed-version deployments where old and new service versions coexist.
 - Kubernetes Services and Endpoints rely on asynchronous iptables/IPVS updates; if a Pod dies before
@@ -32,6 +33,7 @@ service architecture survives Pod kills, node drains, and rolling updates with *
 ## 3. Scope
 
 ### In scope
+
 - `packages/k8s`: Kubernetes client integration using `@kubernetes/client-node`, dynamic manifest compiler,
   and namespace isolation manager.
 - World-to-Kubernetes compilation: Translating MIRRORGRID services into Kubernetes `Deployments`, `Services`,
@@ -44,6 +46,7 @@ service architecture survives Pod kills, node drains, and rolling updates with *
 - Web UI: Kubernetes Cluster & Pod Mesh Inspector (§76), live Pod terminal, and HA failover tester.
 
 ### Explicitly out of scope
+
 - Custom eBPF Linux kernel CNI plugin development.
 - Multi-cloud federation across disparate cloud providers (e.g. AWS to Azure live failover).
 - Managing persistent Kubernetes storage volumes (PVCs) for stateful databases (stateless microservice tier targeted).
@@ -114,6 +117,7 @@ MIRRORGRID tests and enforces the complete zero-downtime termination sequence:
       +---> Flushes in-flight HTTP requests and Kafka outbox records
       +---> Closes listening sockets and exits cleanly (Code 0)
 ```
+
 The verification gate (`verify:ha`) floods a 3-replica service with 200 req/s while terminating Pods and
 asserts **100.0% HTTP 200 success rate**.
 
@@ -173,6 +177,7 @@ CREATE INDEX idx_k8s_chaos_deployment ON k8s_chaos_events(deployment_id, started
 ```
 
 ### Index rationale
+
 - `idx_k8s_deployments_world`: Instant retrieval of live Kubernetes status on world load.
 - `idx_k8s_chaos_deployment`: Audit history of HA experiments per deployment.
 
@@ -233,10 +238,10 @@ apps/web/
 import type { TopologyExport } from '@mirrorgrid/topology';
 
 export interface K8sResourceRequirements {
-  readonly cpuRequest: string;       // e.g. '100m'
-  readonly cpuLimit: string;         // e.g. '500m'
-  readonly memoryRequest: string;    // e.g. '128Mi'
-  readonly memoryLimit: string;     // e.g. '256Mi'
+  readonly cpuRequest: string; // e.g. '100m'
+  readonly cpuLimit: string; // e.g. '500m'
+  readonly memoryRequest: string; // e.g. '128Mi'
+  readonly memoryLimit: string; // e.g. '256Mi'
 }
 
 export interface K8sManifestBundle {
@@ -279,6 +284,7 @@ export interface HaValidator {
 Routes registered in `apps/control` under `/api/v1/worlds/:worldId/k8s`.
 
 ### 1. Deploy World to Kubernetes Cluster
+
 - `POST /api/v1/worlds/:worldId/k8s/deploy`
 - **Request Body (zod schema):**
   ```typescript
@@ -291,15 +297,18 @@ Routes registered in `apps/control` under `/api/v1/worlds/:worldId/k8s`.
 - **Response:** `202 Accepted` with `{ deploymentId: string, namespace: string, status: 'PROVISIONING' }`.
 
 ### 2. Get Live Pod Mesh Status
+
 - `GET /api/v1/worlds/:worldId/k8s/status`
 - **Response:** `200 OK` with list of Pods, container states, node names, and restart counts.
 
 ### 3. Inject Kubernetes Chaos (Pod Kill)
+
 - `POST /api/v1/worlds/:worldId/k8s/chaos/pod-kill`
 - **Request Body:** `{ serviceName: string, gracePeriodSeconds?: number }`
 - **Response:** `200 OK` with `{ terminatedPod: string, replacementPod: string, haScorecard: HaTestResult }`.
 
 ### 4. Trigger Zero-Downtime Rolling Update
+
 - `POST /api/v1/worlds/:worldId/k8s/chaos/rolling-update`
 - **Request Body:** `{ serviceName: string, newImageTag: string }`
 - **Response:** `200 OK` with `{ status: 'COMPLETED', haScorecard: HaTestResult }`.
@@ -309,6 +318,7 @@ Routes registered in `apps/control` under `/api/v1/worlds/:worldId/k8s`.
 ## 9. UI
 
 ### 1. Kubernetes Cluster & Pod Mesh Inspector (`apps/web/src/app/worlds/[worldId]/k8s/page.tsx`)
+
 - **Spec alignment:** §76 (Kubernetes Cluster & Pod Mesh Inspector).
 - **Layout:**
   - **Header HUD:** Cluster Name (`kind-mirrorgrid`), Namespace (`mg-world-a1b2`),
@@ -324,6 +334,7 @@ Routes registered in `apps/control` under `/api/v1/worlds/:worldId/k8s`.
   - **Live Pod Terminal Drawer:** Integrated ANSI web terminal streaming logs from selected Pod.
 
 ### 2. High Availability Failover Validator (`apps/web/src/app/worlds/[worldId]/k8s/ha/page.tsx`)
+
 - **Visuals:**
   - Active HA Gauge: **100.000% Availability Under Disruption** (Target: 100%).
   - Real-time RPS Traffic Chart with vertical marker showing exact moment of Pod termination.
@@ -351,15 +362,18 @@ Routes registered in `apps/control` under `/api/v1/worlds/:worldId/k8s`.
 ## 11. Testing
 
 ### Unit tests (`packages/k8s/tests/unit`)
+
 - `manifest-generator.test.ts`: Verify generated Kubernetes YAML adheres strictly to v1 OpenAPI schemas.
 - `network-policy.test.ts`: Verify generated NetworkPolicy rules permit only explicitly declared service edges.
 
 ### Integration tests (`packages/k8s/tests/integration`)
+
 - Deploy 3-service topology to local Kubernetes cluster (k3s/kind).
 - Assert all Pods transition to `Ready = True` within 30 seconds.
 - Execute NetworkPolicy verification: assert unauthorized inter-pod traffic is blocked with connection timeout.
 
 ### HA Stress Test (`tests/ha/pod-failover.test.ts`)
+
 - Flood service with 200 req/s continuous workload.
 - Terminate 1 Pod every 10 seconds across 3 iterations.
 - Assert 100.0% of requests return HTTP 200 OK with zero dropped connections.
@@ -382,11 +396,16 @@ assert(manifestsSchemaValid, 'Assertion 1: Kubernetes manifests compile with val
 assert(allPodsReady, 'Assertion 2: Multi-replica deployment reaches READY state');
 
 // Assertion 3: Graceful Pod termination under load achieves 100% availability (0 dropped requests)
-assert(podKillHaResult.availabilityPercentage === 100.0 && podKillHaResult.failedRequests === 0,
-  'Assertion 3: Pod termination achieves 100% availability with zero dropped requests');
+assert(
+  podKillHaResult.availabilityPercentage === 100.0 && podKillHaResult.failedRequests === 0,
+  'Assertion 3: Pod termination achieves 100% availability with zero dropped requests',
+);
 
 // Assertion 4: Rolling update completes under continuous traffic with zero downtime
-assert(rollingDeployResult.zeroDowntimeAchieved, 'Assertion 4: Rolling update completes with zero downtime');
+assert(
+  rollingDeployResult.zeroDowntimeAchieved,
+  'Assertion 4: Rolling update completes with zero downtime',
+);
 
 // Assertion 5: Ephemeral namespace teardown purges 100% of cluster resources cleanly
 assert(namespaceCleanlyDeleted, 'Assertion 5: Namespace teardown cleanly cascades all resources');

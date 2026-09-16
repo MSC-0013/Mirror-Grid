@@ -1,4 +1,16 @@
-import { pgTable, uuid, text, integer, bigint, bigserial, jsonb, timestamp, index, primaryKey, check } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  integer,
+  bigint,
+  bigserial,
+  jsonb,
+  timestamp,
+  index,
+  primaryKey,
+  check,
+} from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { worlds } from './core.js';
 import { services } from './topology.js';
@@ -30,9 +42,15 @@ export const experimentRuns = pgTable(
   (table) => [
     index('experiment_runs_world_idx').on(table.worldId, table.status),
     index('experiment_runs_created_idx').on(table.createdAt),
-    check('experiment_runs_mode_check', sql`${table.runtimeMode} IN ('LOGICAL','CONTAINER','HYBRID')`),
-    check('experiment_runs_status_check', sql`${table.status} IN ('CREATED','RUNNING','COMPLETED','FAILED','CANCELLED')`),
-  ]
+    check(
+      'experiment_runs_mode_check',
+      sql`${table.runtimeMode} IN ('LOGICAL','CONTAINER','HYBRID')`,
+    ),
+    check(
+      'experiment_runs_status_check',
+      sql`${table.status} IN ('CREATED','RUNNING','COMPLETED','FAILED','CANCELLED')`,
+    ),
+  ],
 );
 
 export const experimentMetrics = pgTable(
@@ -57,9 +75,16 @@ export const experimentMetrics = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.id, table.runId] }),
-    index('experiment_metrics_run_service_time_idx').on(table.runId, table.serviceId, table.virtualTimeUs),
-    check('experiment_metrics_circuit_state_check', sql`${table.circuitState} IS NULL OR ${table.circuitState} IN ('CLOSED','OPEN','HALF_OPEN')`),
-  ]
+    index('experiment_metrics_run_service_time_idx').on(
+      table.runId,
+      table.serviceId,
+      table.virtualTimeUs,
+    ),
+    check(
+      'experiment_metrics_circuit_state_check',
+      sql`${table.circuitState} IS NULL OR ${table.circuitState} IN ('CLOSED','OPEN','HALF_OPEN')`,
+    ),
+  ],
 );
 
 export type ExperimentRun = typeof experimentRuns.$inferSelect;

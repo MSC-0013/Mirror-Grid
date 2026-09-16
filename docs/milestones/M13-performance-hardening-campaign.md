@@ -5,6 +5,7 @@
 This is the capstone milestone of the MIRRORGRID project.
 
 Across M00 through M12, MIRRORGRID was constructed layer by layer:
+
 - The foundational domain model and topology graph (M01).
 - The deterministic logical simulator with virtual clock and state hashes (M02).
 - The dual runtime peers: Docker containers (M03) and Kubernetes (M12).
@@ -14,6 +15,7 @@ Across M00 through M12, MIRRORGRID was constructed layer by layer:
 
 The final milestone is the **Performance Hardening and Certification Campaign**.
 This milestone subjects the entire platform to an adversarial, multi-hour endurance and stress campaign:
+
 1. **10,000 Req/Sec High-Throughput Load Testing:** Pushing the API Gateway and synthetic microservices to their physical limits.
 2. **24-Hour Soak & Memory Leak Audit:** Verifying zero memory drift and flat RSS heap profiles via automated V8 heap snapshot diffing.
 3. **Adversarial Mutational Fuzzing:** Generating thousands of malformed payloads, corrupt timestamps, and boundary conditions to ensure zero unhandled crashes.
@@ -34,6 +36,7 @@ proof that MIRRORGRID is production-grade, highly performant, and resilient unde
 ## 3. Scope
 
 ### In scope
+
 - `packages/campaign`: High-throughput load generator (`undici.Pool`), V8 heap snapshot leak detector,
   adversarial mutation fuzzer, and campaign orchestrator.
 - High-Throughput Workload Generator capable of generating 10,000+ req/s with bounded client overhead.
@@ -45,6 +48,7 @@ proof that MIRRORGRID is production-grade, highly performant, and resilient unde
 - Final Certification Gate: `npm run verify:campaign`.
 
 ### Explicitly out of scope
+
 - Distributed multi-region load testing across multiple physical datacenters.
 - Physical hardware power disruption testing.
 
@@ -58,6 +62,7 @@ Standard Node.js `fetch` or Axios incurs significant allocation overhead per req
 load generators at ~2,000 req/s.
 
 MIRRORGRID builds a dedicated workload generator using **`undici.Pool`**:
+
 - Connection pooling with HTTP/1.1 pipelining and keep-alive socket reuse.
 - Zero-copy stream consumption.
 - Multi-threaded worker pool (`node:worker_threads`) pinning 4 worker threads to dedicated CPU cores.
@@ -66,11 +71,13 @@ MIRRORGRID builds a dedicated workload generator using **`undici.Pool`**:
 ### Automated V8 Heap Snapshot Differential Analysis
 
 Memory leaks in long-running Node.js distributed systems usually stem from:
+
 - Event listener accumulation (`EventEmitter.on` without `.off`).
 - Unbounded in-memory maps or caches without TTL/eviction.
 - Closures holding references to old request spans.
 
 MIRRORGRID automates leak detection using the V8 inspector:
+
 ```typescript
 // packages/campaign/src/leak/leak-detector.ts
 import v8 from 'node:v8';
@@ -95,12 +102,14 @@ export async function detectMemoryLeak(fn: () => Promise<void>, iterations: numb
   return diff.retainedGrowthBytes <= ALLOWED_SLACK_BYTES;
 }
 ```
+
 If object counts for `TraceSpan`, `CircuitBreakerCore`, or `AsyncJob` grow monotonically across iterations,
 the test fails and outputs the exact constructor and retaining path.
 
 ### Adversarial Mutational Fuzzing
 
 To ensure the reliability engine and event parsers never crash on unexpected inputs:
+
 - Generates 10,000 mutated inputs:
   - Header mutations: Negative deadlines (`mg-deadline-at: -500`), future timestamps ($2^{53} - 1$), malformed W3C traceparents.
   - JSON mutations: Deeply nested objects (depth 100+), NaN/Infinity values, prototype pollution attacks (`__proto__`).
@@ -191,6 +200,7 @@ CREATE INDEX idx_fuzz_anomalies_campaign ON campaign_fuzz_anomalies(campaign_id)
 ```
 
 ### Index rationale
+
 - `idx_campaign_runs_status`: Instant retrieval of past certification records.
 - `idx_campaign_metrics_time`: Powers the 24-hour soak test telemetry sparkline in the UI.
 
@@ -301,6 +311,7 @@ export interface LeakDetector {
 Routes in `apps/control` under `/api/v1/campaign`.
 
 ### 1. Launch Chaos Campaign
+
 - `POST /api/v1/campaign/start`
 - **Request Body (zod schema):**
   ```typescript
@@ -314,14 +325,17 @@ Routes in `apps/control` under `/api/v1/campaign`.
 - **Response:** `202 Accepted` with `{ campaignId: string, status: 'RUNNING' }`.
 
 ### 2. Get Campaign Telemetry
+
 - `GET /api/v1/campaign/:id/telemetry`
 - **Response:** `200 OK` with live RPS, latency percentiles, memory usage, and active anomalies.
 
 ### 3. Abort Campaign
+
 - `POST /api/v1/campaign/:id/abort`
 - **Response:** `200 OK` with `{ status: 'ABORTED' }`.
 
 ### 4. Fetch Certification Artifact
+
 - `GET /api/v1/campaign/:id/certificate`
 - **Response:** `200 OK` with signed cryptographic certification document.
 
@@ -330,6 +344,7 @@ Routes in `apps/control` under `/api/v1/campaign`.
 ## 9. UI
 
 ### 1. Chaos Campaign Command Center (`apps/web/src/app/campaign/page.tsx`)
+
 - **Spec alignment:** §80 (Chaos Campaign Command Center).
 - **Layout:**
   - **Top Banner (Mission Control Style):**
@@ -343,6 +358,7 @@ Routes in `apps/control` under `/api/v1/campaign`.
   - **Active Chaos Disruptions Feed:** Live ticker showing automated faults currently battering the system.
 
 ### 2. Final Certification Badge (`apps/web/src/app/campaign/certificate/page.tsx`)
+
 - **Visuals:**
   - Official MIRRORGRID Reliability & Performance Certification Card.
   - Highlights:
@@ -374,12 +390,14 @@ Routes in `apps/control` under `/api/v1/campaign`.
 ## 11. Testing
 
 ### Unit tests (`packages/campaign/tests/unit`)
+
 - `mutator.test.ts`: Verify generated fuzzed payloads cover negative integers, overflow bounds, and malformed strings.
 - `leak-inspector.test.ts`:
   - Run intentional leak (appending to global array); assert `detectMemoryLeak` flags `isLeakDetected = true`.
   - Run clean function; assert `detectMemoryLeak` flags `isLeakDetected = false`.
 
 ### Performance Stress Benchmark (`packages/campaign/tests/benchmark`)
+
 - Spin up synthetic gateway and services.
 - Flood with 10,000 req/s for 60 seconds.
 - Assert generator achieves target throughput with zero dropped sockets.
@@ -396,24 +414,34 @@ The final gate script validates these 5 ultimate performance and reliability ass
 // tests/gates/verify-campaign.ts
 
 // Assertion 1: Workload generator sustains >= 10,000 requests/sec with P99 < 50ms
-assert(sustainedRps >= 10000 && p99LatencyMs <= 50.0,
-  'Assertion 1: 10,000 req/s throughput sustained with sub-50ms tail latency');
+assert(
+  sustainedRps >= 10000 && p99LatencyMs <= 50.0,
+  'Assertion 1: 10,000 req/s throughput sustained with sub-50ms tail latency',
+);
 
 // Assertion 2: Memory soak test certifies zero memory leaks (RSS growth < 5MB after 100k requests)
-assert(memoryDriftMb <= 5.0 && !leakDetected,
-  'Assertion 2: Zero memory leaks certified via V8 heap snapshot diffing');
+assert(
+  memoryDriftMb <= 5.0 && !leakDetected,
+  'Assertion 2: Zero memory leaks certified via V8 heap snapshot diffing',
+);
 
 // Assertion 3: Event loop lag remains <= 20ms under maximum load
-assert(maxEventLoopLagMs <= 20.0,
-  'Assertion 3: Event loop remains unblocked and responsive under extreme load');
+assert(
+  maxEventLoopLagMs <= 20.0,
+  'Assertion 3: Event loop remains unblocked and responsive under extreme load',
+);
 
 // Assertion 4: Mutational fuzzer executes 10,000 adversarial inputs with zero fatal crashes
-assert(fuzzAnomaliesFatal === 0 && totalFuzzRuns === 10000,
-  'Assertion 4: Fuzz runner survives 10,000 adversarial mutations with 0 crashes');
+assert(
+  fuzzAnomaliesFatal === 0 && totalFuzzRuns === 10000,
+  'Assertion 4: Fuzz runner survives 10,000 adversarial mutations with 0 crashes',
+);
 
 // Assertion 5: Final cryptographic certification hash generated and verified
-assert(campaignCertified && certificationHash.length === 64,
-  'Assertion 5: MIRRORGRID final performance and reliability certification achieved');
+assert(
+  campaignCertified && certificationHash.length === 64,
+  'Assertion 5: MIRRORGRID final performance and reliability certification achieved',
+);
 ```
 
 ---

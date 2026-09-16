@@ -17,7 +17,7 @@ function computeQuantile(samples: number[], q: number): number {
 export class SimulationService {
   constructor(
     private readonly repo: SimulationRepository = simulationRepository,
-    private readonly pool: EnginePool = enginePool
+    private readonly pool: EnginePool = enginePool,
   ) {}
 
   async createRun(input: CreateRunInput) {
@@ -31,7 +31,8 @@ export class SimulationService {
     }
 
     const targetServiceIds = new Set(worldData.dependencies.map((d) => d.targetServiceId));
-    const entryService = worldData.services.find((s) => !targetServiceIds.has(s.id)) ?? worldData.services[0];
+    const entryService =
+      worldData.services.find((s) => !targetServiceIds.has(s.id)) ?? worldData.services[0];
 
     const engineServices: EngineServiceSpec[] = worldData.services.map((s) => {
       const cfg = s.config as Record<string, unknown> | null;
@@ -40,7 +41,8 @@ export class SimulationService {
         name: s.name,
         concurrencyLimit: s.concurrencyLimit,
         queueCapacity: s.queueCapacity,
-        serviceTimeTable: typeof cfg?.serviceTimeTable === 'string' ? cfg.serviceTimeTable : 'default_service',
+        serviceTimeTable:
+          typeof cfg?.serviceTimeTable === 'string' ? cfg.serviceTimeTable : 'default_service',
       };
     });
 
@@ -93,7 +95,14 @@ export class SimulationService {
       durationUs,
     };
 
-    this.pool.registerRun(createdRun.id, input.worldId, input.seed, engineSpec, workload, input.driver);
+    this.pool.registerRun(
+      createdRun.id,
+      input.worldId,
+      input.seed,
+      engineSpec,
+      workload,
+      input.driver,
+    );
 
     return {
       runId: createdRun.id,
@@ -128,7 +137,7 @@ export class SimulationService {
         entryServiceId: string;
         requestTimeoutMs?: number;
         workload: {
-          pattern: any;
+          pattern: WorkloadSpec['pattern'];
           baseRatePerSecond: number;
           durationUs: string;
         };
@@ -148,14 +157,7 @@ export class SimulationService {
         durationUs: BigInt(cfg.workload.durationUs),
       };
 
-      activeRun = this.pool.registerRun(
-        runId,
-        run.worldId,
-        run.seed,
-        engineSpec,
-        workload,
-        'FAST'
-      );
+      activeRun = this.pool.registerRun(runId, run.worldId, run.seed, engineSpec, workload, 'FAST');
     }
 
     // Launch execution asynchronously

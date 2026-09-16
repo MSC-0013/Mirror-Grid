@@ -2,16 +2,7 @@
 
 import React, { useEffect, useState, use } from 'react';
 import Link from 'next/link';
-import {
-  ArrowLeft,
-  Server,
-  Shield,
-  RefreshCw,
-  Cpu,
-  Layers,
-  Activity,
-  Clock,
-} from 'lucide-react';
+import { ArrowLeft, Server, Shield, RefreshCw, Cpu, Layers, Activity, Clock } from 'lucide-react';
 import type { DrawerService, DrawerDependency } from '@/components/topology/service-drawer';
 
 export default function ServiceDetailPage({
@@ -72,10 +63,20 @@ export default function ServiceDetailPage({
   if (error || !service) {
     return (
       <div style={{ padding: 32 }}>
-        <div style={{ padding: 16, borderRadius: 8, backgroundColor: 'var(--color-error-bg)', color: 'var(--color-error)' }}>
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            backgroundColor: 'var(--color-error-bg)',
+            color: 'var(--color-error)',
+          }}
+        >
           {error || 'Service not found'}
         </div>
-        <Link href={`/worlds/${worldId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16 }}>
+        <Link
+          href={`/worlds/${worldId}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16 }}
+        >
           <ArrowLeft size={16} /> Back to Topology
         </Link>
       </div>
@@ -89,8 +90,20 @@ export default function ServiceDetailPage({
   return (
     <div style={{ padding: 32, maxWidth: 1080, margin: '0 auto' }}>
       {/* Breadcrumb Navigation */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: 'var(--color-text-secondary)', marginBottom: 16 }}>
-        <Link href={`/worlds/${worldId}`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 8,
+          fontSize: 13,
+          color: 'var(--color-text-secondary)',
+          marginBottom: 16,
+        }}
+      >
+        <Link
+          href={`/worlds/${worldId}`}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+        >
           <ArrowLeft size={14} /> World Topology
         </Link>
         <span>/</span>
@@ -128,71 +141,175 @@ export default function ServiceDetailPage({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <h1 style={{ fontSize: 20, fontWeight: 700 }}>{service.name}</h1>
-              <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', fontWeight: 600 }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  backgroundColor: 'var(--color-surface)',
+                  border: '1px solid var(--color-border)',
+                  fontWeight: 600,
+                }}
+              >
                 {service.serviceType}
               </span>
-              <span style={{ fontSize: 12, padding: '2px 8px', borderRadius: 4, backgroundColor: 'var(--color-success-bg)', color: 'var(--color-success)', fontWeight: 600 }}>
+              <span
+                style={{
+                  fontSize: 12,
+                  padding: '2px 8px',
+                  borderRadius: 4,
+                  backgroundColor: 'var(--color-success-bg)',
+                  color: 'var(--color-success)',
+                  fontWeight: 600,
+                }}
+              >
                 {service.status}
               </span>
             </div>
             <p style={{ fontSize: 13, color: 'var(--color-text-secondary)', marginTop: 4 }}>
-              Service ID: {service.id} • Registered {new Date(service.createdAt).toLocaleDateString()}
+              Service ID: {service.id} • Registered{' '}
+              {new Date(service.createdAt).toLocaleDateString()}
             </p>
           </div>
         </div>
       </div>
 
       {/* Grid Specification Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-        <div style={{ padding: 16, borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
-          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Target Replicas</span>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: 16,
+          marginBottom: 24,
+        }}
+      >
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            border: '1px solid var(--color-border)',
+            backgroundColor: '#FFFFFF',
+          }}
+        >
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+            Target Replicas
+          </span>
           <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>{service.targetInstances}</p>
         </div>
-        <div style={{ padding: 16, borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
-          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Concurrency Limit</span>
-          <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>{service.concurrencyLimit} slots</p>
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            border: '1px solid var(--color-border)',
+            backgroundColor: '#FFFFFF',
+          }}
+        >
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+            Concurrency Limit
+          </span>
+          <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>
+            {service.concurrencyLimit} slots
+          </p>
         </div>
-        <div style={{ padding: 16, borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            border: '1px solid var(--color-border)',
+            backgroundColor: '#FFFFFF',
+          }}
+        >
           <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Queue Capacity</span>
-          <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>{service.queueCapacity} items</p>
+          <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>
+            {service.queueCapacity} items
+          </p>
         </div>
-        <div style={{ padding: 16, borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
-          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>Connected Edges</span>
-          <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>{inbound.length + outbound.length} edges</p>
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            border: '1px solid var(--color-border)',
+            backgroundColor: '#FFFFFF',
+          }}
+        >
+          <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+            Connected Edges
+          </span>
+          <p style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>
+            {inbound.length + outbound.length} edges
+          </p>
         </div>
       </div>
 
       {/* Fleet Instances Section */}
-      <div style={{ padding: 20, borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: '#FFFFFF', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
-          <Cpu size={16} /> Service Instances ({service.instances?.length || service.targetInstances})
+      <div
+        style={{
+          padding: 20,
+          borderRadius: 8,
+          border: '1px solid var(--color-border)',
+          backgroundColor: '#FFFFFF',
+          marginBottom: 24,
+        }}
+      >
+        <h2
+          style={{
+            fontSize: 15,
+            fontWeight: 600,
+            marginBottom: 12,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+          }}
+        >
+          <Cpu size={16} /> Service Instances (
+          {service.instances?.length || service.targetInstances})
         </h2>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {(service.instances && service.instances.length > 0) ? (
-            service.instances.map((inst: { id?: string; instanceIndex: number; status: string; containerId?: string }) => (
-              <div
-                key={inst.id || inst.instanceIndex}
-                style={{
-                  padding: '10px 14px',
-                  borderRadius: 6,
-                  border: '1px solid var(--color-border)',
-                  backgroundColor: 'var(--color-surface)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                }}
-              >
-                <div>
-                  <strong style={{ fontSize: 13 }}>{service.name}-{inst.instanceIndex}</strong>
-                  <span style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginLeft: 12 }}>
-                    Instance #{inst.instanceIndex}
+          {service.instances && service.instances.length > 0 ? (
+            service.instances.map(
+              (inst: {
+                id?: string;
+                instanceIndex: number;
+                status: string;
+                containerId?: string;
+              }) => (
+                <div
+                  key={inst.id || inst.instanceIndex}
+                  style={{
+                    padding: '10px 14px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border)',
+                    backgroundColor: 'var(--color-surface)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  <div>
+                    <strong style={{ fontSize: 13 }}>
+                      {service.name}-{inst.instanceIndex}
+                    </strong>
+                    <span
+                      style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginLeft: 12 }}
+                    >
+                      Instance #{inst.instanceIndex}
+                    </span>
+                  </div>
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '2px 8px',
+                      borderRadius: 4,
+                      backgroundColor: '#FFFFFF',
+                      border: '1px solid var(--color-border)',
+                    }}
+                  >
+                    {inst.status}
                   </span>
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 600, padding: '2px 8px', borderRadius: 4, backgroundColor: '#FFFFFF', border: '1px solid var(--color-border)' }}>
-                  {inst.status}
-                </span>
-              </div>
-            ))
+              ),
+            )
           ) : (
             <p style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>
               {service.targetInstances} instance(s) provisioned for runtime.
@@ -203,43 +320,101 @@ export default function ServiceDetailPage({
 
       {/* Dependencies & Policies */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-        <div style={{ padding: 20, borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          style={{
+            padding: 20,
+            borderRadius: 8,
+            border: '1px solid var(--color-border)',
+            backgroundColor: '#FFFFFF',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              marginBottom: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
             <Layers size={16} /> Inbound Callers ({inbound.length})
           </h2>
           {inbound.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>No services depend on {service.name}.</p>
+            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
+              No services depend on {service.name}.
+            </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {inbound.map((d) => (
-                <div key={d.id} style={{ padding: 10, borderRadius: 6, border: '1px solid var(--color-border)' }}>
-                  <span style={{ fontSize: 13, fontWeight: 600 }}>← {serviceMap.get(d.sourceServiceId) || d.sourceServiceId.slice(0, 8)}</span>
+                <div
+                  key={d.id}
+                  style={{ padding: 10, borderRadius: 6, border: '1px solid var(--color-border)' }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: 600 }}>
+                    ← {serviceMap.get(d.sourceServiceId) || d.sourceServiceId.slice(0, 8)}
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
 
-        <div style={{ padding: 20, borderRadius: 8, border: '1px solid var(--color-border)', backgroundColor: '#FFFFFF' }}>
-          <h2 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div
+          style={{
+            padding: 20,
+            borderRadius: 8,
+            border: '1px solid var(--color-border)',
+            backgroundColor: '#FFFFFF',
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 15,
+              fontWeight: 600,
+              marginBottom: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+            }}
+          >
             <Activity size={16} /> Outbound Dependencies ({outbound.length})
           </h2>
           {outbound.length === 0 ? (
-            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>No downstream dependencies.</p>
+            <p style={{ fontSize: 13, color: 'var(--color-text-tertiary)' }}>
+              No downstream dependencies.
+            </p>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
               {outbound.map((d) => (
-                <div key={d.id} style={{ padding: 10, borderRadius: 6, border: '1px solid var(--color-border)' }}>
+                <div
+                  key={d.id}
+                  style={{ padding: 10, borderRadius: 6, border: '1px solid var(--color-border)' }}
+                >
                   <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>→ {serviceMap.get(d.targetServiceId) || d.targetServiceId.slice(0, 8)}</span>
-                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{d.timeoutMs}ms</span>
+                    <span style={{ fontSize: 13, fontWeight: 600 }}>
+                      → {serviceMap.get(d.targetServiceId) || d.targetServiceId.slice(0, 8)}
+                    </span>
+                    <span style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
+                      {d.timeoutMs}ms
+                    </span>
                   </div>
-                  <div style={{ marginTop: 8, fontSize: 11, color: 'var(--color-text-secondary)', display: 'flex', gap: 12 }}>
+                  <div
+                    style={{
+                      marginTop: 8,
+                      fontSize: 11,
+                      color: 'var(--color-text-secondary)',
+                      display: 'flex',
+                      gap: 12,
+                    }}
+                  >
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <Shield size={12} /> Breaker: {d.circuitBreakerPolicy.threshold} err / {d.circuitBreakerPolicy.windowMs}ms
+                      <Shield size={12} /> Breaker: {d.circuitBreakerPolicy.threshold} err /{' '}
+                      {d.circuitBreakerPolicy.windowMs}ms
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <RefreshCw size={12} /> Retry: {d.retryPolicy.maxAttempts}x ({d.retryPolicy.type})
+                      <RefreshCw size={12} /> Retry: {d.retryPolicy.maxAttempts}x (
+                      {d.retryPolicy.type})
                     </span>
                   </div>
                 </div>

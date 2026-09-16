@@ -19,7 +19,7 @@ export interface MerkleResult {
 export class MerkleHash {
   static compute(components: ReadonlyMap<string, ComponentHash>): MerkleResult {
     const keys = Array.from(components.keys()).sort((a, b) =>
-      Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8'))
+      Buffer.compare(Buffer.from(a, 'utf8'), Buffer.from(b, 'utf8')),
     );
 
     const hasher = createHash('sha256');
@@ -43,7 +43,7 @@ export class MerkleHash {
   /** First differing component key, or null when the two roots agree. */
   static firstDivergence(
     expected: ReadonlyMap<string, ComponentHash>,
-    actual: ReadonlyMap<string, ComponentHash>
+    actual: ReadonlyMap<string, ComponentHash>,
   ): string | null {
     const keys = Array.from(new Set([...expected.keys(), ...actual.keys()])).sort();
     for (const key of keys) {

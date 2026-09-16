@@ -8,11 +8,7 @@ export const metadata: Metadata = {
   description: 'Model topologies, generate workloads, and inject deterministic chaos.',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
       <body>

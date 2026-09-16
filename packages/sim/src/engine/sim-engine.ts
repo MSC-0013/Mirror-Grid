@@ -5,11 +5,7 @@ import { SeedableRng } from '../rng/rng.js';
 import { ICDFRegistry } from '../icdf/registry.js';
 import { ICDF_MANIFEST } from '../icdf/manifest.js';
 import type { ICDFTable } from '../icdf/loader.js';
-import {
-  SimScheduler,
-  type EdgeSpec,
-  type RequestOutcome,
-} from '../queueing/scheduler.js';
+import { SimScheduler, type EdgeSpec, type RequestOutcome } from '../queueing/scheduler.js';
 import type { ServiceModelSnapshot } from '../queueing/service-model.js';
 import { MetricsCollector, type MetricSampleRow } from '../metrics/collector.js';
 import { WorkloadGenerator, type WorkloadSpec } from '../workload/generator.js';
@@ -113,7 +109,7 @@ export class SimEngine {
         'ICDF table drift detected — determinism cannot be guaranteed on this platform.\n' +
           verification.mismatches.map((m) => `  - ${m}`).join('\n') +
           '\nIf the change is intended, run: npx tsx packages/sim/tools/gen-icdf-manifest.ts ' +
-          'and bump ENGINE_VERSION.'
+          'and bump ENGINE_VERSION.',
       );
     }
   }
@@ -149,13 +145,11 @@ export class SimEngine {
 
     this.generator = new WorkloadGenerator(
       options.workload,
-      options.workload.pattern === 'RANDOM'
-        ? this.rng.stream('workload:rate')
-        : undefined
+      options.workload.pattern === 'RANDOM' ? this.rng.stream('workload:rate') : undefined,
     );
     this.arrivals = new ArrivalScheduler(
       this.registry.get('interarrival_1s'),
-      this.rng.stream('workload:arrival')
+      this.rng.stream('workload:arrival'),
     );
   }
 
@@ -183,7 +177,7 @@ export class SimEngine {
       outcome.serviceId,
       this.clock.nowUs(),
       outcome.latencyUs,
-      outcome.status !== 'SUCCESS'
+      outcome.status !== 'SUCCESS',
     );
   }
 
@@ -236,7 +230,7 @@ export class SimEngine {
             service.serviceId,
             nowUs,
             service.queueDepth,
-            service.activeSlots
+            service.activeSlots,
           );
         }
 

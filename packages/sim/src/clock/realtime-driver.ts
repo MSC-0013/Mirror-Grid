@@ -64,13 +64,19 @@ export class RealtimeDriver implements ClockDriver {
       }
 
       const nextTimeUs = clock.peekNextTimeUs();
-      if (this.maxVirtualTimeUs !== undefined && nextTimeUs !== null && nextTimeUs > this.maxVirtualTimeUs) {
+      if (
+        this.maxVirtualTimeUs !== undefined &&
+        nextTimeUs !== null &&
+        nextTimeUs > this.maxVirtualTimeUs
+      ) {
         break;
       }
 
       const elapsedWallMs = performance.now() - this.wallStartMs;
       // Convert wall elapsed ms to target virtual us scaled by multiplier
-      const targetVirtualElapsedUs = BigInt(Math.floor(elapsedWallMs * 1000 * this.speedMultiplier));
+      const targetVirtualElapsedUs = BigInt(
+        Math.floor(elapsedWallMs * 1000 * this.speedMultiplier),
+      );
       const targetVirtualTimeUs = this.virtualStartUs + targetVirtualElapsedUs;
 
       // Process any events whose scheduled time <= targetVirtualTimeUs

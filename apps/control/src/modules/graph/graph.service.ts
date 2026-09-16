@@ -5,7 +5,7 @@ import { DependenciesRepository } from '../dependencies/dependencies.repository.
 export class GraphService {
   constructor(
     private readonly servicesRepo: ServicesRepository = new ServicesRepository(),
-    private readonly depsRepo: DependenciesRepository = new DependenciesRepository()
+    private readonly depsRepo: DependenciesRepository = new DependenciesRepository(),
   ) {}
 
   public async getGraph(worldId: string) {

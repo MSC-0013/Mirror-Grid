@@ -31,8 +31,9 @@ export async function runMigrations(connectionString = config.DATABASE_URL) {
       throw new Error(`Migrations directory not found at ${migrationsDir}`);
     }
 
-    const files = fs.readdirSync(migrationsDir)
-      .filter(f => f.endsWith('.sql'))
+    const files = fs
+      .readdirSync(migrationsDir)
+      .filter((f) => f.endsWith('.sql'))
       .sort();
 
     for (const file of files) {
@@ -49,7 +50,7 @@ export async function runMigrations(connectionString = config.DATABASE_URL) {
       const filePath = path.join(migrationsDir, file);
       const content = fs.readFileSync(filePath, 'utf8');
 
-      await sql.begin(async tx => {
+      await sql.begin(async (tx) => {
         await tx.unsafe(content);
         await tx`INSERT INTO _migrations (name) VALUES (${file})`;
       });
@@ -67,7 +68,7 @@ export async function runMigrations(connectionString = config.DATABASE_URL) {
 if (process.argv[1] === __filename) {
   runMigrations()
     .then(() => process.exit(0))
-    .catch(err => {
+    .catch((err) => {
       console.error('Migration failed:', err);
       process.exit(1);
     });

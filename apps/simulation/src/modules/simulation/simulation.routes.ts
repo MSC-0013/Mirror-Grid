@@ -3,7 +3,7 @@ import { simulationController, SimulationController } from './simulation.control
 
 export async function simulationRoutes(
   app: FastifyInstance,
-  options?: { controller?: SimulationController }
+  options?: { controller?: SimulationController },
 ) {
   const controller = options?.controller ?? simulationController;
 

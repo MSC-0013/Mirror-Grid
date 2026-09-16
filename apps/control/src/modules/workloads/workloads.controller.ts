@@ -12,7 +12,7 @@ import { AuthService } from '../auth/auth.service.js';
 export class WorkloadsController {
   constructor(
     private readonly service: WorkloadsService = new WorkloadsService(),
-    private readonly authService: AuthService = new AuthService()
+    private readonly authService: AuthService = new AuthService(),
   ) {}
 
   private async getAuthContext(req: FastifyRequest) {

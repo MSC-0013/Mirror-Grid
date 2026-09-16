@@ -89,17 +89,17 @@ async function runDeterminismGate() {
   assert.strictEqual(
     resultA.stateHash.root,
     resultB.stateHash.root,
-    'Assertion 1 Failed: Same seed and spec did not produce identical state hashes!'
+    'Assertion 1 Failed: Same seed and spec did not produce identical state hashes!',
   );
   assert.strictEqual(
     resultA.totals.submitted,
     resultB.totals.submitted,
-    'Assertion 1 Failed: Submitted requests count mismatch'
+    'Assertion 1 Failed: Submitted requests count mismatch',
   );
   assert.strictEqual(
     resultA.totals.succeeded,
     resultB.totals.succeeded,
-    'Assertion 1 Failed: Succeeded requests count mismatch'
+    'Assertion 1 Failed: Succeeded requests count mismatch',
   );
   console.log('  PASS: Hashes and event totals are byte-identical.\n');
 
@@ -117,7 +117,7 @@ async function runDeterminismGate() {
   assert.notStrictEqual(
     resultA.stateHash.root,
     resultC.stateHash.root,
-    'Assertion 2 Failed: Different seed produced identical state hash!'
+    'Assertion 2 Failed: Different seed produced identical state hash!',
   );
   console.log('  PASS: State hash is sensitive to seed changes.\n');
 
@@ -189,7 +189,9 @@ async function runDeterminismGate() {
   const errorPercent = (Math.abs(L_exact - L_expected) / L_expected) * 100;
 
   console.log(`  L (exact integral) = ${L_exact.toFixed(4)}`);
-  console.log(`  lambda * W         = ${L_expected.toFixed(4)} (lambda=${lambda_s.toFixed(2)}, W=${(W_s * 1000).toFixed(2)}ms)`);
+  console.log(
+    `  lambda * W         = ${L_expected.toFixed(4)} (lambda=${lambda_s.toFixed(2)}, W=${(W_s * 1000).toFixed(2)}ms)`,
+  );
   console.log(`  Error: ${errorPercent.toFixed(4)}%`);
   assert.ok(errorPercent < 2.0, `Little's law error ${errorPercent}% exceeded 2% threshold`);
   console.log("  PASS: Little's Law holds within 2% gate (measured < 0.01%).\n");
@@ -238,7 +240,10 @@ async function runDeterminismGate() {
   const wallDurationMs = performance.now() - wallStart;
   console.log(`  Executed 1,000 services in ${wallDurationMs.toFixed(2)}ms (virtual duration: 2s)`);
   console.log(`  Total requests processed: ${scaleResult.totals.submitted}`);
-  assert.ok(wallDurationMs < 60000, `Scale benchmark took ${wallDurationMs}ms (exceeded 60s limit)`);
+  assert.ok(
+    wallDurationMs < 60000,
+    `Scale benchmark took ${wallDurationMs}ms (exceeded 60s limit)`,
+  );
   console.log('  PASS: Scale benchmark completed under 60 seconds.\n');
 
   // [6/8] RealtimeDriver Drift Check
@@ -269,7 +274,10 @@ async function runDeterminismGate() {
   console.log(`  Expected wall time: ${expectedWallMs.toFixed(2)}ms`);
   console.log(`  Measured wall time: ${rtWallElapsedMs.toFixed(2)}ms`);
   console.log(`  Drift: ${driftPercent.toFixed(2)}%`);
-  assert.ok(driftPercent <= 5.0, `RealtimeDriver drift ${driftPercent.toFixed(2)}% exceeded 5% gate`);
+  assert.ok(
+    driftPercent <= 5.0,
+    `RealtimeDriver drift ${driftPercent.toFixed(2)}% exceeded 5% gate`,
+  );
   console.log('  PASS: RealtimeDriver holds 1x wall clock within 5% drift.\n');
 
   // [7/8] Driver Equivalence: FastDriver == RealtimeDriver State Hash
@@ -300,7 +308,7 @@ async function runDeterminismGate() {
   assert.strictEqual(
     eqFastResult.stateHash.root,
     eqRtResult.stateHash.root,
-    'Assertion 7 Failed: FastDriver and RealtimeDriver produced divergent state hashes!'
+    'Assertion 7 Failed: FastDriver and RealtimeDriver produced divergent state hashes!',
   );
   console.log('  PASS: Driver Equivalence proven (zero wall-clock leak into model state).\n');
 
@@ -326,20 +334,18 @@ async function runDeterminismGate() {
     const importMatch = content.match(/(?:import|from)\s+['"]@mirrorgrid\/[^'"]+['"]/);
     assert.ok(
       !importMatch,
-      `Purity violation in ${f}: packages/sim must not import workspace packages (found ${importMatch?.[0]})`
+      `Purity violation in ${f}: packages/sim must not import workspace packages (found ${importMatch?.[0]})`,
     );
     if (!f.endsWith('.test.ts') && !f.endsWith('test-harness.ts')) {
-      const codeWithoutComments = content
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '');
+      const codeWithoutComments = content.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
 
       assert.ok(
         !/\bDate\.now\s*\(/.test(codeWithoutComments),
-        `Purity violation in ${f}: Date.now() call is strictly forbidden in packages/sim engine`
+        `Purity violation in ${f}: Date.now() call is strictly forbidden in packages/sim engine`,
       );
       assert.ok(
         !/\bMath\.random\s*\(/.test(codeWithoutComments),
-        `Purity violation in ${f}: Math.random() call is strictly forbidden in packages/sim engine`
+        `Purity violation in ${f}: Math.random() call is strictly forbidden in packages/sim engine`,
       );
     }
   }

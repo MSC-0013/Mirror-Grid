@@ -1,10 +1,4 @@
-export type WorkloadPattern =
-  | 'CONSTANT'
-  | 'RAMP_UP'
-  | 'RAMP_DOWN'
-  | 'BURST'
-  | 'SPIKE'
-  | 'RANDOM';
+export type WorkloadPattern = 'CONSTANT' | 'RAMP_UP' | 'RAMP_DOWN' | 'BURST' | 'SPIKE' | 'RANDOM';
 
 export const WORKLOAD_PATTERNS: readonly WorkloadPattern[] = [
   'CONSTANT',

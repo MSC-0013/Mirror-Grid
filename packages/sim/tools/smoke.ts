@@ -39,5 +39,7 @@ console.log('virtual duration A:', Number(a.virtualDurationUs) / 1e6, 's');
 console.log('metric rows A:', a.metrics.length);
 const gw = a.metrics.filter((m) => m.serviceId === 'gateway').slice(0, 3);
 for (const m of gw) {
-  console.log(`  gateway t=${Number(m.virtualTimeUs)/1e6}s reqs=${m.requestsTotal} failed=${m.requestsFailed} p95=${m.quantiles.p95}us (${m.quantiles.quality}) q=${m.queueDepth}`);
+  console.log(
+    `  gateway t=${Number(m.virtualTimeUs) / 1e6}s reqs=${m.requestsTotal} failed=${m.requestsFailed} p95=${m.quantiles.p95}us (${m.quantiles.quality}) q=${m.queueDepth}`,
+  );
 }

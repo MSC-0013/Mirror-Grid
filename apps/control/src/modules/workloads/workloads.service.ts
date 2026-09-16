@@ -6,7 +6,7 @@ import type { CreateWorkloadInput, UpdateWorkloadInput } from './workloads.schem
 export class WorkloadsService {
   constructor(
     private readonly repo: WorkloadsRepository = new WorkloadsRepository(),
-    private readonly servicesRepo: ServicesRepository = new ServicesRepository()
+    private readonly servicesRepo: ServicesRepository = new ServicesRepository(),
   ) {}
 
   public async listWorkloads(worldId: string) {
@@ -25,7 +25,9 @@ export class WorkloadsService {
     // 1. Check target service exists in world
     const targetService = await this.servicesRepo.findById(worldId, input.targetServiceId);
     if (!targetService) {
-      throw AppError.unprocessable(`Target service '${input.targetServiceId}' does not belong to this World`);
+      throw AppError.unprocessable(
+        `Target service '${input.targetServiceId}' does not belong to this World`,
+      );
     }
 
     // 2. Check name uniqueness within this world
@@ -46,7 +48,9 @@ export class WorkloadsService {
     if (input.targetServiceId && input.targetServiceId !== current.targetServiceId) {
       const targetService = await this.servicesRepo.findById(worldId, input.targetServiceId);
       if (!targetService) {
-        throw AppError.unprocessable(`Target service '${input.targetServiceId}' does not belong to this World`);
+        throw AppError.unprocessable(
+          `Target service '${input.targetServiceId}' does not belong to this World`,
+        );
       }
     }
 

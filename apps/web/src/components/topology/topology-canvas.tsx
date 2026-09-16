@@ -34,7 +34,7 @@ const NODE_HEIGHT = 75;
 function getLayoutedElements(
   services: DrawerService[],
   dependencies: DrawerDependency[],
-  selectedId: string | null
+  selectedId: string | null,
 ) {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
@@ -116,7 +116,7 @@ export function TopologyCanvas({
     const { nodes: newNodes, edges: newEdges } = getLayoutedElements(
       services,
       dependencies,
-      selectedServiceId
+      selectedServiceId,
     );
     setNodes(newNodes);
     setEdges(newEdges);

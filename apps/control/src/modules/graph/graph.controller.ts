@@ -12,7 +12,7 @@ const graphParamSchema = z.object({
 export class GraphController {
   constructor(
     private readonly service: GraphService = new GraphService(),
-    private readonly authService: AuthService = new AuthService()
+    private readonly authService: AuthService = new AuthService(),
   ) {}
 
   private async getAuthContext(req: FastifyRequest) {

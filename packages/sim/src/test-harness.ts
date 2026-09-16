@@ -32,7 +32,7 @@ export function assert(condition: boolean, message: string): void {
 export function assertEqual<T>(actual: T, expected: T, message?: string): void {
   if (actual !== expected) {
     throw new Error(
-      `${message ?? 'Values differ'}\n    expected: ${String(expected)}\n    actual:   ${String(actual)}`
+      `${message ?? 'Values differ'}\n    expected: ${String(expected)}\n    actual:   ${String(actual)}`,
     );
   }
 }
@@ -41,7 +41,7 @@ export function assertClose(
   actual: number,
   expected: number,
   tolerancePct: number,
-  message?: string
+  message?: string,
 ): void {
   const delta = Math.abs(actual - expected);
   const allowed = Math.abs(expected) * (tolerancePct / 100);
@@ -50,7 +50,7 @@ export function assertClose(
     throw new Error(
       `${message ?? 'Value out of tolerance'}\n` +
         `    expected: ${expected} (+/-${tolerancePct}%)\n` +
-        `    actual:   ${actual} (off by ${pct.toFixed(2)}%)`
+        `    actual:   ${actual} (off by ${pct.toFixed(2)}%)`,
     );
   }
 }

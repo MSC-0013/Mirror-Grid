@@ -7,10 +7,7 @@ import {
   criticalPath,
   dependentsOf,
 } from './algorithms.js';
-import {
-  isValidWorldTransition,
-  assertValidWorldTransition,
-} from '../world/world-status.js';
+import { isValidWorldTransition, assertValidWorldTransition } from '../world/world-status.js';
 import {
   isValidServiceTransition,
   assertValidServiceTransition,
@@ -38,7 +35,11 @@ cyclic.addEdge('C', 'A');
 const cycleResult = detectCycles(cyclic);
 assert(cycleResult !== null, 'Cycle must be detected');
 assert(cycleResult.services.length >= 3, 'Cycle path must contain nodes');
-assert.strictEqual(cycleResult.services[0], cycleResult.services[cycleResult.services.length - 1], 'Cycle path start and end must match');
+assert.strictEqual(
+  cycleResult.services[0],
+  cycleResult.services[cycleResult.services.length - 1],
+  'Cycle path start and end must match',
+);
 console.log('✓ detectCycles detects cycle:', cycleResult.services.join(' -> '));
 
 // 3. Topological Order
@@ -47,7 +48,11 @@ assert.strictEqual(topoOrder[0], 'A', 'Source node must come first');
 assert.strictEqual(topoOrder[topoOrder.length - 1], 'D', 'Sink node must come last');
 console.log('✓ topologicalOrder returns correct order:', topoOrder.join(', '));
 
-assert.throws(() => topologicalOrder(cyclic), /contains a cycle/, 'topologicalOrder throws on cyclic graph');
+assert.throws(
+  () => topologicalOrder(cyclic),
+  /contains a cycle/,
+  'topologicalOrder throws on cyclic graph',
+);
 console.log('✓ topologicalOrder throws error on cyclic graph');
 
 // 4. Reference Topology (§10)
@@ -72,7 +77,11 @@ refGraph.addEdge('users', 'postgres');
 
 // 5. reachableFrom('payments') -> { orders, gateway }
 const callersOfPayments = reachableFrom(refGraph, 'payments');
-assert.strictEqual(callersOfPayments.size, 2, 'Payments reachable from exactly 2 upstream services');
+assert.strictEqual(
+  callersOfPayments.size,
+  2,
+  'Payments reachable from exactly 2 upstream services',
+);
 assert(callersOfPayments.has('orders'), 'Orders can reach Payments');
 assert(callersOfPayments.has('gateway'), 'Gateway can reach Payments');
 assert(!callersOfPayments.has('users'), 'Users cannot reach Payments');
@@ -99,7 +108,10 @@ assert(isValidWorldTransition('RUNNING', 'PAUSED'));
 assert(isValidWorldTransition('PAUSED', 'RUNNING'));
 assert(isValidWorldTransition('RUNNING', 'COMPLETED'));
 assert(!isValidWorldTransition('COMPLETED', 'RUNNING'), 'COMPLETED -> RUNNING must be illegal');
-assert.throws(() => assertValidWorldTransition('COMPLETED', 'RUNNING'), /Illegal world status transition/);
+assert.throws(
+  () => assertValidWorldTransition('COMPLETED', 'RUNNING'),
+  /Illegal world status transition/,
+);
 console.log('✓ WorldStatus state machine enforced');
 
 // 9. Service State Machine Transitions
@@ -110,8 +122,14 @@ assert(isValidServiceTransition('DEGRADED', 'PARTIALLY_AVAILABLE'));
 assert(isValidServiceTransition('PARTIALLY_AVAILABLE', 'UNHEALTHY'));
 assert(isValidServiceTransition('UNHEALTHY', 'FAILED'));
 assert(isValidServiceTransition('FAILED', 'STARTING'));
-assert(!isValidServiceTransition('STOPPED', 'HEALTHY'), 'STOPPED -> HEALTHY directly must be illegal');
-assert.throws(() => assertValidServiceTransition('STOPPED', 'HEALTHY'), /Illegal service status transition/);
+assert(
+  !isValidServiceTransition('STOPPED', 'HEALTHY'),
+  'STOPPED -> HEALTHY directly must be illegal',
+);
+assert.throws(
+  () => assertValidServiceTransition('STOPPED', 'HEALTHY'),
+  /Illegal service status transition/,
+);
 console.log('✓ ServiceStatus state machine enforced (8 states)');
 
 console.log('\nAll packages/domain unit tests passed successfully!\n');

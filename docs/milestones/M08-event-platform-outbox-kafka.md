@@ -13,6 +13,7 @@ subsystems for cross-cutting notifications. Doing so creates tight temporal coup
 and catastrophic cascading failures.
 
 This milestone establishes MIRRORGRID’s enterprise Event Platform:
+
 1. **The Transactional Outbox Pattern:** Guarantees zero event loss and eliminates the dual-write bug.
    Events are written to PostgreSQL inside the same atomic transaction as the domain state changes.
 2. **Apache Kafka Streaming:** Production-grade event bus powered by `@confluentinc/kafka-javascript`
@@ -37,6 +38,7 @@ This milestone establishes MIRRORGRID’s enterprise Event Platform:
 ## 3. Scope
 
 ### In scope
+
 - PostgreSQL Transactional Outbox (`outbox_events` table).
 - Outbox Relay daemon polling/streaming unpublished events to Apache Kafka with `acks: 'all'`.
 - Apache Kafka integration using `@confluentinc/kafka-javascript` with TLS and SASL support.
@@ -48,6 +50,7 @@ This milestone establishes MIRRORGRID’s enterprise Event Platform:
 - UI: Real-time WebSocket connection HUD, animated live activity ticker, and polling elimination.
 
 ### Explicitly out of scope
+
 - Kafka Schema Registry integration with Avro/Protobuf (standardized JSON with schema versioning used at M08).
 - Multi-datacenter Kafka MirrorMaker / active-active geo-replication.
 - Complex Event Processing (CEP) with Apache Flink.
@@ -59,16 +62,19 @@ This milestone establishes MIRRORGRID’s enterprise Event Platform:
 ### The Dual-Write Problem and the Transactional Outbox
 
 When a service modifies database state and publishes an event, attempting to do both directly is flawed:
+
 ```
 // THE BUGGY DUAL-WRITE PATTERN:
 await db.update(breakers).set({ state: 'OPEN' }); // Succeeds
 await kafkaProducer.send({ topic: 'events', ... }); // Broker unavailable! Event lost forever.
 ```
+
 If the broker is down, the event is never published, and downstream read models and WebSockets desynchronize.
 If the order is reversed (publish then DB write), a DB deadlock causes an event to fire for a transaction
 that was aborted and rolled back.
 
 **The Transactional Outbox Solution:**
+
 ```typescript
 // THE ATOMIC OUTBOX PATTERN:
 await db.transaction(async (tx) => {
@@ -82,6 +88,7 @@ await db.transaction(async (tx) => {
   });
 });
 ```
+
 The domain update and the event are committed in a single atomic database write.
 An asynchronous **Outbox Relay** reads unpublished rows using `FOR UPDATE SKIP LOCKED`, sends them to
 Kafka, and marks them `published_at = NOW()`.
@@ -93,6 +100,7 @@ must never be consumed before the `FAULT_INJECTED` event that triggered it.
 
 MIRRORGRID guarantees causal order by binding the Kafka partition key to `world_id`:
 $$\text{partition} = \text{hash}(\text{world\_id}) \pmod{\text{num\_partitions}}$$
+
 - All events for World A are routed to the same Kafka partition and processed in order by a single consumer.
 - Events for World B and World C are routed to different partitions and processed concurrently.
 - Each event carries a monotonic `sequence_num` scoped to `world_id`. If a consumer receives sequence #12
@@ -109,6 +117,7 @@ VALUES ($1, $2, NOW())
 ON CONFLICT (event_id, consumer_group) DO NOTHING
 RETURNING event_id;
 ```
+
 If the insert returns 0 rows, the event has already been processed by this consumer group and is safely skipped.
 
 ### Real-Time WebSocket Multiplexing (`apps/gateway`)
@@ -117,9 +126,11 @@ Frontend clients establish a single persistent WebSocket connection to the API G
 `ws://localhost:3000/api/v1/ws`.
 
 Clients send subscription commands:
+
 ```json
 { "action": "subscribe", "topic": "world:a1b2c3d4:metrics" }
 ```
+
 The Gateway maintains a connection registry. When a metric or status event arrives from Kafka (or the local
 Redis Pub/Sub bridge), the Gateway filters and broadcasts the payload to all subscribed clients in < 20ms.
 
@@ -179,6 +190,7 @@ CREATE INDEX idx_activity_feed_world ON world_activity_feed(world_id, occurred_a
 ```
 
 ### Index rationale
+
 - `idx_outbox_unprocessed`: Partial index targeting only unpublished events. Keeps outbox relay polling
   lightning-fast even when millions of historical events exist.
 - `idx_outbox_world_seq`: Enforces fast ordered retrieval of event logs for timeline replay and audit.
@@ -281,7 +293,9 @@ export interface OutboxWriter {
 }
 
 export interface EventProducer {
-  publish(event: DomainEventEnvelope): Promise<{ readonly partition: number; readonly offset: bigint }>;
+  publish(
+    event: DomainEventEnvelope,
+  ): Promise<{ readonly partition: number; readonly offset: bigint }>;
   publishBatch(events: readonly DomainEventEnvelope[]): Promise<void>;
 }
 ```
@@ -308,6 +322,7 @@ export type ServerMessage =
 ## 8. API
 
 ### 1. WebSocket Stream Gateway
+
 - **Endpoint:** `GET /api/v1/ws` (WebSocket upgrade)
 - **Protocol:** JSON messages conforming to `ClientMessage` / `ServerMessage`.
 - **Supported Topic Patterns:**
@@ -316,11 +331,13 @@ export type ServerMessage =
   - `world:<worldId>:activity` — Formatted activity feed items.
 
 ### 2. Query World Activity Feed (REST fallback)
+
 - `GET /api/v1/worlds/:worldId/activity-feed`
 - **Query Params:** `limit=50&before=timestamp`
 - **Response:** `200 OK` with `{ data: ActivityFeedItem[], nextCursor: string }`.
 
 ### 3. Outbox Relay Health & Status
+
 - `GET /api/v1/admin/outbox/status`
 - **Response:** `200 OK` with `{ pendingCount: number, oldestPendingAgeMs: number, relayLagMs: number }`.
 
@@ -329,6 +346,7 @@ export type ServerMessage =
 ## 9. UI
 
 ### 1. Live Activity Feed Ticker (`apps/web/src/components/activity-feed/live-feed-ticker.tsx`)
+
 - **Spec alignment:** §68 (Real-Time Activity Stream & Event Ticker).
 - **Layout:**
   - Placed on World Overview and Live Experiment screens.
@@ -340,6 +358,7 @@ export type ServerMessage =
   - Timestamp display formatted as relative ("2s ago") with absolute tooltip on hover.
 
 ### 2. Real-Time Connection HUD (`apps/web/src/components/activity-feed/connection-hud.tsx`)
+
 - **Visuals:** Top-right navbar badge showing live WebSocket health:
   - Green pulsing dot: `CONNECTED (sub-10ms)`
   - Amber spinning icon: `RECONNECTING (attempt 2/5)`
@@ -367,11 +386,13 @@ export type ServerMessage =
 ## 11. Testing
 
 ### Unit tests (`packages/events/tests/unit`)
+
 - `envelope.test.ts`: Verify event serialization, timestamp parsing, and header propagation.
 - `topic-matcher.test.ts`: Verify wildcard topic subscription matching (e.g. `world:*:metrics`).
 - `dedup.test.ts`: Assert duplicate event IDs are rejected by the consumer idempotency guard.
 
 ### Integration tests (`packages/events/tests/integration`)
+
 - `outbox-relay.test.ts`:
   - Enqueue 100 outbox events in a transaction; start Outbox Relay.
   - Assert all 100 events are published to Kafka and marked `published_at` in Postgres.
@@ -394,13 +415,22 @@ The gate test validates these 5 core event platform assertions:
 // tests/gates/verify-events.ts
 
 // Assertion 1: Outbox transaction guarantees zero event loss and zero dual-write corruption
-assert(outboxEventsPublishedCleanly, 'Assertion 1: Outbox events published to Kafka with 100% fidelity');
+assert(
+  outboxEventsPublishedCleanly,
+  'Assertion 1: Outbox events published to Kafka with 100% fidelity',
+);
 
 // Assertion 2: Per-world partition key guarantees strict causal sequence ordering
-assert(causalSequenceMaintained, 'Assertion 2: Events consumed in exact monotonic sequence per world');
+assert(
+  causalSequenceMaintained,
+  'Assertion 2: Events consumed in exact monotonic sequence per world',
+);
 
 // Assertion 3: Consumer idempotency strictly drops duplicate message deliveries
-assert(duplicateDropped && consumerStateCorrect, 'Assertion 3: Duplicate deliveries deduplicated cleanly');
+assert(
+  duplicateDropped && consumerStateCorrect,
+  'Assertion 3: Duplicate deliveries deduplicated cleanly',
+);
 
 // Assertion 4: CQRS activity feed projection accurately reflects domain events
 assert(activityFeedUpdatedFromEvent, 'Assertion 4: CQRS activity feed updated asynchronously');

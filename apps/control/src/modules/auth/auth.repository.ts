@@ -71,8 +71,8 @@ export class AuthRepository {
         and(
           eq(sessions.tokenHash, tokenHash),
           eq(sessions.isActive, true),
-          gt(sessions.expiresAt, now)
-        )
+          gt(sessions.expiresAt, now),
+        ),
       )
       .limit(1);
 
@@ -80,10 +80,7 @@ export class AuthRepository {
   }
 
   public async invalidateSession(tokenHash: string) {
-    await db
-      .update(sessions)
-      .set({ isActive: false })
-      .where(eq(sessions.tokenHash, tokenHash));
+    await db.update(sessions).set({ isActive: false }).where(eq(sessions.tokenHash, tokenHash));
   }
 
   public async touchSession(tokenHash: string) {

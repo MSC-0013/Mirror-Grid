@@ -82,7 +82,7 @@ export class SimScheduler {
       const service = new BoundedConcurrencyService(
         spec.id,
         spec.concurrencyLimit,
-        spec.queueCapacity
+        spec.queueCapacity,
       );
       this.services.set(spec.id, service);
       this.serviceTimeTables.set(spec.id, spec.serviceTimeTable);
@@ -133,7 +133,7 @@ export class SimScheduler {
     serviceId: string,
     deadlineUs: bigint,
     depth: number,
-    onSettle: Continuation
+    onSettle: Continuation,
   ): void {
     const service = this.services.get(serviceId);
     if (!service || depth > this.maxDepth) {
@@ -175,7 +175,7 @@ export class SimScheduler {
   private beginWork(
     service: BoundedConcurrencyService,
     request: SimRequest,
-    onSettle: Continuation
+    onSettle: Continuation,
   ): void {
     const table = this.serviceTimeTables.get(service.serviceId)!;
     const stream = this.rng.stream(`service:${service.serviceId}:service_time`);
@@ -196,7 +196,7 @@ export class SimScheduler {
     service: BoundedConcurrencyService,
     request: SimRequest,
     index: number,
-    onSettle: Continuation
+    onSettle: Continuation,
   ): void {
     const edges = this.edgesBySource.get(service.serviceId) ?? [];
 
@@ -242,7 +242,7 @@ export class SimScheduler {
     service: BoundedConcurrencyService,
     request: SimRequest,
     status: RequestStatus,
-    onSettle: Continuation
+    onSettle: Continuation,
   ): void {
     const nowUs = this.clock.nowUs();
     this.report(request, service.serviceId, status, nowUs);
@@ -262,7 +262,7 @@ export class SimScheduler {
     request: SimRequest,
     serviceId: string,
     status: RequestStatus,
-    nowUs: bigint
+    nowUs: bigint,
   ): void {
     this.onOutcome?.({
       requestId: request.id,

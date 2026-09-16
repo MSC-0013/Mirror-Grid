@@ -16,10 +16,7 @@ export class DependenciesRepository {
       .select()
       .from(schema.serviceDependencies)
       .where(
-        and(
-          eq(schema.serviceDependencies.worldId, worldId),
-          eq(schema.serviceDependencies.id, id)
-        )
+        and(eq(schema.serviceDependencies.worldId, worldId), eq(schema.serviceDependencies.id, id)),
       )
       .limit(1);
 
@@ -34,8 +31,8 @@ export class DependenciesRepository {
         and(
           eq(schema.serviceDependencies.worldId, worldId),
           eq(schema.serviceDependencies.sourceServiceId, sourceServiceId),
-          eq(schema.serviceDependencies.targetServiceId, targetServiceId)
-        )
+          eq(schema.serviceDependencies.targetServiceId, targetServiceId),
+        ),
       )
       .limit(1);
 
@@ -67,10 +64,7 @@ export class DependenciesRepository {
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(schema.serviceDependencies.worldId, worldId),
-          eq(schema.serviceDependencies.id, id)
-        )
+        and(eq(schema.serviceDependencies.worldId, worldId), eq(schema.serviceDependencies.id, id)),
       )
       .returning();
 
@@ -81,10 +75,7 @@ export class DependenciesRepository {
     const [deleted] = await db
       .delete(schema.serviceDependencies)
       .where(
-        and(
-          eq(schema.serviceDependencies.worldId, worldId),
-          eq(schema.serviceDependencies.id, id)
-        )
+        and(eq(schema.serviceDependencies.worldId, worldId), eq(schema.serviceDependencies.id, id)),
       )
       .returning();
 

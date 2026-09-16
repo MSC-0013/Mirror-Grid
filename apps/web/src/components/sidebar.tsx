@@ -19,15 +19,28 @@ export function Sidebar() {
   return (
     <aside className="sidebar">
       <div className="sidebar-logo">
-        <div style={{ width: 24, height: 24, backgroundColor: 'var(--color-primary)', borderRadius: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 13 }}>
+        <div
+          style={{
+            width: 24,
+            height: 24,
+            backgroundColor: 'var(--color-primary)',
+            borderRadius: 4,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#fff',
+            fontSize: 13,
+          }}
+        >
           MG
         </div>
         MIRRORGRID
       </div>
       <ul className="nav-links">
-        {links.map(link => {
+        {links.map((link) => {
           const Icon = link.icon;
-          const isActive = pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
+          const isActive =
+            pathname === link.href || (link.href !== '/' && pathname.startsWith(link.href));
           return (
             <li key={link.href}>
               <Link href={link.href} className={`nav-link ${isActive ? 'active' : ''}`}>
@@ -38,7 +51,14 @@ export function Sidebar() {
           );
         })}
       </ul>
-      <div style={{ padding: 16, borderTop: '1px solid var(--color-border)', fontSize: 12, color: 'var(--color-text-secondary)' }}>
+      <div
+        style={{
+          padding: 16,
+          borderTop: '1px solid var(--color-border)',
+          fontSize: 12,
+          color: 'var(--color-text-secondary)',
+        }}
+      >
         v0.1.0 • Core Tier
       </div>
     </aside>

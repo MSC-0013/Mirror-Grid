@@ -1,4 +1,16 @@
-import { pgTable, uuid, text, integer, bigint, numeric, jsonb, timestamp, unique, index, check } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  text,
+  integer,
+  bigint,
+  numeric,
+  jsonb,
+  timestamp,
+  unique,
+  index,
+  check,
+} from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 import { worlds } from './core.js';
 import type { RetryPolicy, CircuitBreakerPolicy } from '@mirrorgrid/domain';
@@ -26,16 +38,19 @@ export const services = pgTable(
     index('services_world_status_idx').on(table.worldId, table.status),
     check(
       'services_service_type_check',
-      sql`${table.serviceType} IN ('HTTP','GRPC','WORKER','DATABASE','CACHE','MESSAGE_BROKER')`
+      sql`${table.serviceType} IN ('HTTP','GRPC','WORKER','DATABASE','CACHE','MESSAGE_BROKER')`,
     ),
     check(
       'services_status_check',
-      sql`${table.status} IN ('STOPPED','STARTING','HEALTHY','DEGRADED','PARTIALLY_AVAILABLE','UNHEALTHY','FAILED','UNKNOWN')`
+      sql`${table.status} IN ('STOPPED','STARTING','HEALTHY','DEGRADED','PARTIALLY_AVAILABLE','UNHEALTHY','FAILED','UNKNOWN')`,
     ),
-    check('services_target_instances_check', sql`${table.targetInstances} >= 1 AND ${table.targetInstances} <= 100`),
+    check(
+      'services_target_instances_check',
+      sql`${table.targetInstances} >= 1 AND ${table.targetInstances} <= 100`,
+    ),
     check('services_concurrency_limit_check', sql`${table.concurrencyLimit} >= 1`),
     check('services_queue_capacity_check', sql`${table.queueCapacity} >= 0`),
-  ]
+  ],
 );
 
 export const serviceInstances = pgTable(
@@ -58,9 +73,9 @@ export const serviceInstances = pgTable(
     unique('service_instances_service_index_unique').on(table.serviceId, table.instanceIndex),
     check(
       'service_instances_status_check',
-      sql`${table.status} IN ('STOPPED','STARTING','HEALTHY','DEGRADED','PARTIALLY_AVAILABLE','UNHEALTHY','FAILED','UNKNOWN')`
+      sql`${table.status} IN ('STOPPED','STARTING','HEALTHY','DEGRADED','PARTIALLY_AVAILABLE','UNHEALTHY','FAILED','UNKNOWN')`,
     ),
-  ]
+  ],
 );
 
 export const serviceDependencies = pgTable(
@@ -82,13 +97,13 @@ export const serviceDependencies = pgTable(
       .$type<RetryPolicy>()
       .notNull()
       .default(
-        sql`'{"type":"EXPONENTIAL","maxAttempts":3,"baseDelayMs":100,"maxDelayMs":30000,"jitterFactor":0.25,"budgetPercent":20}'::jsonb`
+        sql`'{"type":"EXPONENTIAL","maxAttempts":3,"baseDelayMs":100,"maxDelayMs":30000,"jitterFactor":0.25,"budgetPercent":20}'::jsonb`,
       ),
     circuitBreakerPolicy: jsonb('circuit_breaker_policy')
       .$type<CircuitBreakerPolicy>()
       .notNull()
       .default(
-        sql`'{"enabled":true,"threshold":5,"windowMs":10000,"cooldownMs":30000,"halfOpenProbes":3}'::jsonb`
+        sql`'{"enabled":true,"threshold":5,"windowMs":10000,"cooldownMs":30000,"halfOpenProbes":3}'::jsonb`,
       ),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
@@ -96,7 +111,7 @@ export const serviceDependencies = pgTable(
   (table) => [
     unique('service_dependencies_source_target_unique').on(
       table.sourceServiceId,
-      table.targetServiceId
+      table.targetServiceId,
     ),
     index('service_deps_source_idx').on(table.sourceServiceId),
     index('service_deps_target_idx').on(table.targetServiceId),
@@ -104,10 +119,13 @@ export const serviceDependencies = pgTable(
     check('service_deps_timeout_check', sql`${table.timeoutMs} > 0`),
     check(
       'service_deps_criticality_check',
-      sql`${table.criticality} IN ('REQUIRED','OPTIONAL','BEST_EFFORT')`
+      sql`${table.criticality} IN ('REQUIRED','OPTIONAL','BEST_EFFORT')`,
     ),
-    check('service_deps_no_self_edge_check', sql`${table.sourceServiceId} != ${table.targetServiceId}`),
-  ]
+    check(
+      'service_deps_no_self_edge_check',
+      sql`${table.sourceServiceId} != ${table.targetServiceId}`,
+    ),
+  ],
 );
 
 export const workloads = pgTable(
@@ -133,10 +151,10 @@ export const workloads = pgTable(
     unique('workloads_world_name_unique').on(table.worldId, table.name),
     check(
       'workloads_pattern_check',
-      sql`${table.pattern} IN ('CONSTANT','RAMP_UP','RAMP_DOWN','BURST','SPIKE','RANDOM')`
+      sql`${table.pattern} IN ('CONSTANT','RAMP_UP','RAMP_DOWN','BURST','SPIKE','RANDOM')`,
     ),
     check('workloads_base_rate_check', sql`${table.baseRate} >= 0`),
-  ]
+  ],
 );
 
 export type ServiceRow = typeof services.$inferSelect;

@@ -86,7 +86,8 @@ export async function startGateway() {
 }
 
 // Auto-start if run directly
-const isDirectRun = process.argv[1]?.endsWith('server.ts') || process.argv[1]?.endsWith('server.js');
+const isDirectRun =
+  process.argv[1]?.endsWith('server.ts') || process.argv[1]?.endsWith('server.js');
 if (isDirectRun) {
   void startGateway();
 }

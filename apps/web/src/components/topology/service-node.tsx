@@ -128,7 +128,14 @@ export const ServiceNode = memo(({ data }: { data: ServiceNodeData }) => {
         }}
       />
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginBottom: 6,
+        }}
+      >
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           <div
             style={{
@@ -158,7 +165,14 @@ export const ServiceNode = memo(({ data }: { data: ServiceNodeData }) => {
         </span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          marginTop: 4,
+        }}
+      >
         <div
           style={{
             display: 'inline-flex',

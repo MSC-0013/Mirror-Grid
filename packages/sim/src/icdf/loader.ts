@@ -12,7 +12,7 @@ export interface ICDFTable {
 export function createICDFTable(
   name: string,
   params: Record<string, number>,
-  buckets: Int32Array
+  buckets: Int32Array,
 ): ICDFTable {
   // Hash the raw byte buffer of the Int32Array
   const buffer = Buffer.from(buckets.buffer, buckets.byteOffset, buckets.byteLength);

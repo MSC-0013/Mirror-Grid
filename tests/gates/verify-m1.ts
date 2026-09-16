@@ -31,7 +31,12 @@ async function checkNoMockDataRule(dir: string): Promise<string[]> {
   function scan(currentDir: string) {
     const entries = fs.readdirSync(currentDir, { withFileTypes: true });
     for (const entry of entries) {
-      if (entry.name === 'node_modules' || entry.name === '.git' || entry.name === '.next' || entry.name === 'dist') {
+      if (
+        entry.name === 'node_modules' ||
+        entry.name === '.git' ||
+        entry.name === '.next' ||
+        entry.name === 'dist'
+      ) {
         continue;
       }
       const fullPath = path.join(currentDir, entry.name);
@@ -52,7 +57,8 @@ async function runM1Gate() {
   console.log('   MIRRORGRID M1: Domain Model & Topology Gate');
   console.log('====================================================\n');
 
-  const connectionString = process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/mirrorgrid';
+  const connectionString =
+    process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/mirrorgrid';
 
   // 1. Check database connectivity and migrations
   console.log('[1/8] Verifying database connectivity & migrations...');
@@ -152,7 +158,11 @@ async function runM1Gate() {
         criticality: edge.criticality,
       },
     });
-    assert.strictEqual(res.statusCode, 201, `Failed to create edge ${edge.source} -> ${edge.target}`);
+    assert.strictEqual(
+      res.statusCode,
+      201,
+      `Failed to create edge ${edge.source} -> ${edge.target}`,
+    );
   }
   console.log('✓ Successfully seeded 6 services and 8 dependencies purely via API.');
 
@@ -186,9 +196,16 @@ async function runM1Gate() {
       timeoutMs: 1000,
     },
   });
-  assert.strictEqual(cycleAttemptRes.statusCode, 422, 'Cycle must be rejected with 422 Unprocessable Entity');
+  assert.strictEqual(
+    cycleAttemptRes.statusCode,
+    422,
+    'Cycle must be rejected with 422 Unprocessable Entity',
+  );
   const cycleBody = JSON.parse(cycleAttemptRes.payload);
-  assert(cycleBody.error.message.includes('Cycle detected'), 'Error message must state cycle detected');
+  assert(
+    cycleBody.error.message.includes('Cycle detected'),
+    'Error message must state cycle detected',
+  );
   assert(Array.isArray(cycleBody.error.details.cycle), 'Response must contain cycle path array');
   console.log(`✓ Cycle rejected with 422: ${cycleBody.error.message}`);
 
@@ -211,7 +228,11 @@ async function runM1Gate() {
     url: `/api/v1/worlds/${worldId}/services/${serviceIdMap['payments']}`,
     headers: { cookie: cookieHeader },
   });
-  assert.strictEqual(deleteRes.statusCode, 409, 'Deleting service with dependents must return 409 Conflict');
+  assert.strictEqual(
+    deleteRes.statusCode,
+    409,
+    'Deleting service with dependents must return 409 Conflict',
+  );
   console.log('✓ DELETE /services/:paymentsId rejected with 409 Conflict (dependents exist).');
 
   // Assert no dangling edges:
@@ -230,7 +251,7 @@ async function runM1Gate() {
   assert.strictEqual(
     mockViolations.length,
     0,
-    `No-Mock Rule VIOLATION: Found mock files: ${mockViolations.join(', ')}`
+    `No-Mock Rule VIOLATION: Found mock files: ${mockViolations.join(', ')}`,
   );
   console.log('✓ No-Mock Rule PASSED (0 mock-data.ts files in repository).');
 

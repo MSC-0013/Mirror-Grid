@@ -13,7 +13,7 @@ import { AuthService } from '../auth/auth.service.js';
 export class ServicesController {
   constructor(
     private readonly service: ServicesService = new ServicesService(),
-    private readonly authService: AuthService = new AuthService()
+    private readonly authService: AuthService = new AuthService(),
   ) {}
 
   private async getAuthContext(req: FastifyRequest) {
@@ -48,12 +48,10 @@ export class ServicesController {
     const { items, total } = await this.service.listServices(
       worldId,
       pagination.page,
-      pagination.limit
+      pagination.limit,
     );
 
-    return reply.status(200).send(
-      paginatedResult(items, total, pagination.page, pagination.limit)
-    );
+    return reply.status(200).send(paginatedResult(items, total, pagination.page, pagination.limit));
   }
 
   public async get(req: FastifyRequest, reply: FastifyReply) {

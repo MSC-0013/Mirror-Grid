@@ -8,12 +8,14 @@ Engineering organizations do not manage systems by staring at raw metrics; they 
 In M04 and M05, MIRRORGRID built the capability to inject faults and observe cascading failures.
 However, raw latency spikes and 500 error counts lack business context. In real-world Site Reliability
 Engineering (SRE), teams need to know:
+
 1. Did this incident violate our customer contract (SLO)?
 2. How much of our 30-day Error Budget was consumed (Burn Rate)?
 3. Given that 10 services threw errors simultaneously, which single node was the **true root cause**,
    and which were merely collateral victims?
 
 This milestone implements the **Site Reliability Engineering Intelligence Engine**:
+
 - Formal Google SRE Error Budget calculations and Multi-Window Multi-Burn-Rate alerting.
 - Deterministic graph-theoretic **Automated Root Cause Analysis (RCA)** that traces failure propagation
   through the topology graph to isolate the culprit.
@@ -34,6 +36,7 @@ This milestone implements the **Site Reliability Engineering Intelligence Engine
 ## 3. Scope
 
 ### In scope
+
 - `packages/sre`: Core mathematical engine for SLI calculation, Error Budget accounting, multi-window
   burn rate evaluation, and graph-theoretic RCA algorithms.
 - SLO management: Availability SLIs (% of successful requests) and Latency SLIs (% of requests faster than threshold).
@@ -45,6 +48,7 @@ This milestone implements the **Site Reliability Engineering Intelligence Engine
 - Web UI: SLO & Error Budget Dashboard (§67) and Automated RCA Incident Review console (§69).
 
 ### Explicitly out of scope
+
 - External PagerDuty / OpsGenie / Slack notification webhook dispatching.
 - Black-box neural network anomaly detection (M10 uses transparent, explainable graph algorithms).
 - Customer billing or financial SLA credit calculation.
@@ -60,15 +64,17 @@ The **Error Budget** is the fraction of allowable unreliability:
 $$\text{Error Budget} = 1.0 - \text{Target} = 1.0 - 0.999 = 0.001 \quad (0.1\%)$$
 
 If an outage occurs, we measure how rapidly the budget is consumed (**Burn Rate**):
+
 - $\text{Burn Rate} = 1.0$: Consumes 100% of the budget in exactly the window duration (e.g. 30 days).
 - $\text{Burn Rate} = 14.4$: Consumes 2% of the budget in 1 hour. This triggers a **P1 Critical Alert**.
 - $\text{Burn Rate} = 6.0$: Consumes 5% of the budget in 6 hours. This triggers a **P2 High Alert**.
 
 To prevent alert fatigue and flapping, MIRRORGRID implements **Multi-Window Verification**:
 A 14.4x alert requires **both**:
+
 1. Long window (1 hour) burn rate $\ge 14.4$
 2. Short window (5 minutes) burn rate $\ge 14.4$
-The short window ensures the incident is still actively occurring when the alert fires.
+   The short window ensures the incident is still actively occurring when the alert fires.
 
 ### Graph-Theoretic Automated Root Cause Analysis (RCA)
 
@@ -91,6 +97,7 @@ MIRRORGRID’s RCA algorithm uses topological causality:
 ```
 
 **The Algorithm:**
+
 1. **Anomaly Detection:** Identify all nodes where current SLI deviates $> 3\sigma$ from baseline.
 2. **Topological Ordering:** Construct the dependency subgraph containing only degraded nodes.
 3. **Temporal Precedence:** Find the node whose first anomaly timestamp ($T_0$) occurred earliest.
@@ -103,11 +110,12 @@ MIRRORGRID’s RCA algorithm uses topological causality:
 ### Executive Reliability Report Compiler
 
 Reports synthesize technical chaos runs into executive insights:
+
 - Executive Summary & Reliability Score (0–100).
 - Error Budget Impact table (% consumed, time to exhaustion).
 - Cascading Failure Diagram showing blast radius.
 - MTTD and MTTR scorecard.
-- Actionable Architectural Recommendations (e.g. *"Reduce Orders retry limit from 3 to 1 to eliminate retry storm"*).
+- Actionable Architectural Recommendations (e.g. _"Reduce Orders retry limit from 3 to 1 to eliminate retry storm"_).
 
 ---
 
@@ -182,6 +190,7 @@ CREATE INDEX idx_reports_world ON reliability_reports(world_id, created_at DESC)
 ```
 
 ### Index rationale
+
 - `idx_slos_world`: Instant lookup of all active SLOs for world dashboard.
 - `idx_burn_events_slo`: Fast retrieval of recent burn spikes for alerting status.
 - `idx_rca_world`: Ordered access to forensic incident investigations.
@@ -264,7 +273,7 @@ export interface ErrorBudgetStatus {
   readonly targetPercentage: number;
   readonly currentPercentage: number;
   readonly budgetRemainingPercent: number; // e.g. 42.5%
-  readonly currentBurnRate: number;        // e.g. 14.4
+  readonly currentBurnRate: number; // e.g. 14.4
   readonly isBurning: boolean;
   readonly estimatedExhaustionHours?: number;
 }
@@ -287,14 +296,21 @@ export interface RcaInvestigationResult {
   readonly rootCauseServiceId: string;
   readonly rootCauseServiceName: string;
   readonly confidencePercentage: number;
-  readonly failureType: 'LATENCY_INDUCED_SATURATION' | 'RESOURCE_STARVATION' | 'POISON_PILL' | 'CIRCUIT_TRIP_CASCADE';
+  readonly failureType:
+    | 'LATENCY_INDUCED_SATURATION'
+    | 'RESOURCE_STARVATION'
+    | 'POISON_PILL'
+    | 'CIRCUIT_TRIP_CASCADE';
   readonly causalPath: readonly CausalChainNode[];
   readonly explanation: string;
   readonly architecturalRecommendation: string;
 }
 
 export interface RcaEngine {
-  analyzeIncident(worldId: string, incidentWindow: { fromMicros: bigint; toMicros: bigint }): Promise<RcaInvestigationResult>;
+  analyzeIncident(
+    worldId: string,
+    incidentWindow: { fromMicros: bigint; toMicros: bigint },
+  ): Promise<RcaInvestigationResult>;
 }
 ```
 
@@ -305,6 +321,7 @@ export interface RcaEngine {
 Routes in `apps/control` under `/api/v1/worlds/:worldId`.
 
 ### 1. Create Service SLO
+
 - `POST /api/v1/worlds/:worldId/slos`
 - **Request Body (zod schema):**
   ```typescript
@@ -320,15 +337,18 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId`.
 - **Response:** `201 Created` with configured SLO.
 
 ### 2. Get Live Error Budget Status
+
 - `GET /api/v1/worlds/:worldId/slos/:sloId/budget`
 - **Response:** `200 OK` with `ErrorBudgetStatus`.
 
 ### 3. Trigger Automated RCA Analysis
+
 - `POST /api/v1/worlds/:worldId/rca/analyze`
 - **Request Body:** `{ fromMicros: number, toMicros: number, alertId?: string }`
 - **Response:** `200 OK` with `RcaInvestigationResult`.
 
 ### 4. Generate Executive Reliability Report
+
 - `POST /api/v1/worlds/:worldId/reports/generate`
 - **Request Body:** `{ title: string, timeRangeStart: string, timeRangeEnd: string }`
 - **Response:** `201 Created` with report summary and full Markdown body.
@@ -338,6 +358,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId`.
 ## 9. UI
 
 ### 1. SLO & Error Budget Dashboard (`apps/web/src/app/worlds/[worldId]/slo/page.tsx`)
+
 - **Spec alignment:** §67 (SLO & Error Budget Dashboard).
 - **Layout:**
   - Header: World overall reliability index score (`99.82% / 99.90% Target`).
@@ -349,6 +370,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId`.
   - Historical Compliance Grid: 30-day compliance calendar heat map.
 
 ### 2. Automated RCA Incident Review Console (`apps/web/src/app/worlds/[worldId]/rca/page.tsx`)
+
 - **Spec alignment:** §69 (Automated RCA Incident Review).
 - **Layout:**
   - Incident Headline Banner:
@@ -357,7 +379,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId`.
   - Interactive Causal Path Visualizer: Horizontal node graph:
     `Gateway (504) ---> Orders (Thread Exhausted) ---> [ Payments (Root Cause: +400ms) ]`
     Clicking each node shows evidence cards and anomaly charts.
-  - SRE Recommendations Box: Clear remediation guidance (e.g. *"Install circuit breaker on Orders -> Payments edge with 200ms timeout"*).
+  - SRE Recommendations Box: Clear remediation guidance (e.g. _"Install circuit breaker on Orders -> Payments edge with 200ms timeout"_).
 
 ---
 
@@ -381,6 +403,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId`.
 ## 11. Testing
 
 ### Unit tests (`packages/sre/tests/unit`)
+
 - `burn-rate.test.ts`:
   - Assert 2% budget consumed in 1 hour outputs exactly `burnRate = 14.4`.
   - Assert multi-window rule rejects false alarms where short window is normal.
@@ -390,6 +413,7 @@ Routes in `apps/control` under `/api/v1/worlds/:worldId`.
   - Assert RCA correctly designates Payments as root cause with $> 90\%$ confidence (not Gateway).
 
 ### Integration tests (`apps/control/tests/integration/sre`)
+
 - Create SLO, simulate metric samples exceeding threshold, assert `slo_burn_events` record inserted.
 - Trigger RCA analysis via API; assert resulting report correctly maps causal chain and persists in DB.
 
@@ -405,21 +429,31 @@ The gate test validates these 5 core SRE assertions:
 // tests/gates/verify-reliability.ts
 
 // Assertion 1: Multi-window burn rate math matches Google SRE specifications exactly
-assert(burnRateEvaluatorAccurate, 'Assertion 1: Multi-window burn rate calculations mathematically verified');
+assert(
+  burnRateEvaluatorAccurate,
+  'Assertion 1: Multi-window burn rate calculations mathematically verified',
+);
 
 // Assertion 2: Dual-window requirement suppresses transient false-positive alerts
-assert(transientSpikeSuppressed, 'Assertion 2: Short-lived transient spikes suppressed without alert');
+assert(
+  transientSpikeSuppressed,
+  'Assertion 2: Short-lived transient spikes suppressed without alert',
+);
 
 // Assertion 3: Automated RCA isolates true root cause in a 4-tier cascading failure (>90% confidence)
-assert(rcaResult.rootCauseServiceName === 'payments' && rcaResult.confidencePercentage >= 90.0,
-  'Assertion 3: Graph RCA isolates root cause with high confidence');
+assert(
+  rcaResult.rootCauseServiceName === 'payments' && rcaResult.confidencePercentage >= 90.0,
+  'Assertion 3: Graph RCA isolates root cause with high confidence',
+);
 
 // Assertion 4: Error budget accounting accurately tracks budget depletion and time-to-exhaustion
 assert(errorBudgetCalculatedCorrectly, 'Assertion 4: Error budget remaining percentage accurate');
 
 // Assertion 5: Executive report compiler generates complete, well-formed Markdown document
-assert(reportMarkdownValid && reportMarkdown.includes('Root Cause Analysis'),
-  'Assertion 5: Executive reliability report compiles successfully');
+assert(
+  reportMarkdownValid && reportMarkdown.includes('Root Cause Analysis'),
+  'Assertion 5: Executive reliability report compiles successfully',
+);
 ```
 
 ---

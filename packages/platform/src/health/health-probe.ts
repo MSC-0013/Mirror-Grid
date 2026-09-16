@@ -45,7 +45,7 @@ export class HealthAggregator {
       const start = Date.now();
       try {
         const res = await probe.check();
-        const latencyMs = res.latencyMs ?? (Date.now() - start);
+        const latencyMs = res.latencyMs ?? Date.now() - start;
         componentReports.push({
           name,
           status: res.status,

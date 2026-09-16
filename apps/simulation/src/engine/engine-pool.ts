@@ -1,11 +1,7 @@
 import { db } from '@mirrorgrid/db';
 import { experimentRuns, experimentMetrics } from '@mirrorgrid/db/schema';
 import { eq } from 'drizzle-orm';
-import {
-  SimEngine,
-  type EngineWorldSpec,
-  type EngineRunResult,
-} from '@mirrorgrid/sim';
+import { SimEngine, type EngineWorldSpec, type EngineRunResult } from '@mirrorgrid/sim';
 import type { WorkloadSpec } from '@mirrorgrid/sim/workload';
 import { FastDriver, RealtimeDriver, type ClockDriver } from '@mirrorgrid/sim/clock';
 import type { MetricSampleRow } from '@mirrorgrid/sim/metrics';
@@ -37,7 +33,7 @@ export class EnginePool {
     seed: bigint,
     spec: EngineWorldSpec,
     workload: WorkloadSpec,
-    driverType: 'FAST' | 'REALTIME' = 'FAST'
+    driverType: 'FAST' | 'REALTIME' = 'FAST',
   ): ActiveRun {
     const engine = new SimEngine(spec);
     const activeRun: ActiveRun = {
@@ -78,7 +74,8 @@ export class EnginePool {
       .set({ status: 'RUNNING', startedAt: run.startedAt })
       .where(eq(experimentRuns.id, runId));
 
-    const driver: ClockDriver = run.driverType === 'REALTIME' ? new RealtimeDriver() : new FastDriver();
+    const driver: ClockDriver =
+      run.driverType === 'REALTIME' ? new RealtimeDriver() : new FastDriver();
 
     run.runPromise = run.engine
       .run({
@@ -108,7 +105,7 @@ export class EnginePool {
 
         logger.info(
           { runId: run.runId, rootHash: result.stateHash.root, totals: result.totals },
-          'Simulation run completed'
+          'Simulation run completed',
         );
 
         return result;
@@ -162,7 +159,10 @@ export class EnginePool {
 
       await db.insert(experimentMetrics).values(dbValues);
     } catch (err) {
-      logger.error({ err, runId, count: rows.length }, 'Failed to persist simulation metrics to DB');
+      logger.error(
+        { err, runId, count: rows.length },
+        'Failed to persist simulation metrics to DB',
+      );
     }
   }
 

@@ -12,7 +12,7 @@ import { AuthService } from '../auth/auth.service.js';
 export class DependenciesController {
   constructor(
     private readonly service: DependenciesService = new DependenciesService(),
-    private readonly authService: AuthService = new AuthService()
+    private readonly authService: AuthService = new AuthService(),
   ) {}
 
   private async getAuthContext(req: FastifyRequest) {

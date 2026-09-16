@@ -51,11 +51,25 @@ export const worlds = pgTable('worlds', {
   name: text('name').notNull(),
   description: text('description'),
   status: text('status', {
-    enum: ['IDLE', 'CONFIGURING', 'READY', 'RUNNING', 'PAUSED', 'STOPPING', 'STOPPED', 'FAILED', 'ARCHIVED'],
-  }).notNull().default('IDLE'),
+    enum: [
+      'IDLE',
+      'CONFIGURING',
+      'READY',
+      'RUNNING',
+      'PAUSED',
+      'STOPPING',
+      'STOPPED',
+      'FAILED',
+      'ARCHIVED',
+    ],
+  })
+    .notNull()
+    .default('IDLE'),
   runtimeMode: text('runtime_mode', {
     enum: ['LOGICAL', 'CONTAINER', 'HYBRID'],
-  }).notNull().default('LOGICAL'),
+  })
+    .notNull()
+    .default('LOGICAL'),
   eventSeq: bigint('event_seq', { mode: 'bigint' }).notNull().default(0n),
   createdBy: uuid('created_by')
     .notNull()

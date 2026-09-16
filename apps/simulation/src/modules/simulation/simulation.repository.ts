@@ -21,7 +21,10 @@ export class SimulationRepository {
     if (!worldRows[0]) return undefined;
 
     const serviceRows = await db.select().from(services).where(eq(services.worldId, worldId));
-    const dependencyRows = await db.select().from(serviceDependencies).where(eq(serviceDependencies.worldId, worldId));
+    const dependencyRows = await db
+      .select()
+      .from(serviceDependencies)
+      .where(eq(serviceDependencies.worldId, worldId));
 
     return {
       world: worldRows[0],
@@ -35,17 +38,31 @@ export class SimulationRepository {
     return rows[0];
   }
 
-  async updateRunStatus(id: string, status: 'CREATED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED', finalStateHash?: string) {
+  async updateRunStatus(
+    id: string,
+    status: 'CREATED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED',
+    finalStateHash?: string,
+  ) {
     const values: Record<string, unknown> = { status };
     if (finalStateHash) values.finalStateHash = finalStateHash;
     if (status === 'RUNNING') values.startedAt = new Date();
-    if (status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED') values.completedAt = new Date();
+    if (status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED')
+      values.completedAt = new Date();
 
-    const rows = await db.update(experimentRuns).set(values).where(eq(experimentRuns.id, id)).returning();
+    const rows = await db
+      .update(experimentRuns)
+      .set(values)
+      .where(eq(experimentRuns.id, id))
+      .returning();
     return rows[0];
   }
 
-  async getMetrics(runId: string, serviceId?: string, fromUs?: bigint, toUs?: bigint): Promise<ExperimentMetric[]> {
+  async getMetrics(
+    runId: string,
+    serviceId?: string,
+    fromUs?: bigint,
+    toUs?: bigint,
+  ): Promise<ExperimentMetric[]> {
     const conditions = [eq(experimentMetrics.runId, runId)];
 
     if (serviceId) {

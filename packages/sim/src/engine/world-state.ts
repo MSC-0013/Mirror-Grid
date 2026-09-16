@@ -93,7 +93,7 @@ export class ClockComponent implements HashableComponent {
     private readonly clockUs: bigint,
     private readonly eventSeqCounter: bigint,
     private readonly engineVersion: string,
-    private readonly hashSchemaVersion: number
+    private readonly hashSchemaVersion: number,
   ) {}
 
   writeCanonical(s: CanonicalSerializer): void {
@@ -112,7 +112,7 @@ export function buildComponents(state: WorldStateSnapshot): HashableComponent[] 
       state.clockUs,
       state.eventSeqCounter,
       state.engineVersion,
-      state.hashSchemaVersion
+      state.hashSchemaVersion,
     ),
     new RngComponent(state.rngStreams),
   ];

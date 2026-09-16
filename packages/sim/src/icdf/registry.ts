@@ -42,7 +42,7 @@ export class ICDFRegistry {
     const table = this.tables.get(key);
     if (!table) {
       throw new Error(
-        `Unknown ICDF table "${key}". Registered: ${Array.from(this.tables.keys()).sort().join(', ')}`
+        `Unknown ICDF table "${key}". Registered: ${Array.from(this.tables.keys()).sort().join(', ')}`,
       );
     }
     return table;
@@ -75,7 +75,7 @@ export class ICDFRegistry {
    * of as an unexplained replay divergence weeks later.
    */
   verifyAgainstManifest(
-    expected: Record<string, { hash: string }>
+    expected: Record<string, { hash: string }>,
   ): { ok: true } | { ok: false; mismatches: string[] } {
     const mismatches: string[] = [];
 
@@ -85,7 +85,7 @@ export class ICDFRegistry {
         mismatches.push(`${key}: missing from registry`);
       } else if (table.hash !== expected[key].hash) {
         mismatches.push(
-          `${key}: expected ${expected[key].hash.slice(0, 16)}…, got ${table.hash.slice(0, 16)}…`
+          `${key}: expected ${expected[key].hash.slice(0, 16)}…, got ${table.hash.slice(0, 16)}…`,
         );
       }
     }

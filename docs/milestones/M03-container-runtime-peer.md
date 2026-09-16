@@ -50,6 +50,7 @@ high-volume background services run logically while critical path services run i
 ## 3. Scope
 
 ### In scope
+
 - `apps/synthetic-service`: Fastify-based microservice container image parameterized by route definitions:
   simulates CPU/memory burn, handles upstream RPCs, enforces M04 reliability shells, and exposes admin API.
 - W3C Trace Context (`traceparent`, `tracestate`) and `mg-deadline-at` header propagation across container hops.
@@ -62,6 +63,7 @@ high-volume background services run logically while critical path services run i
 - UI: Container Fleet Manager screen, container status cards, live log streaming.
 
 ### Explicitly out of scope
+
 - Multi-node Kubernetes orchestration, Helm charts, and custom CRDs (M12).
 - Full multi-phase experiment orchestrator (M05).
 - OpenTelemetry Collector / Jaeger daemon deployment (M09, though trace headers are emitted here).
@@ -98,6 +100,7 @@ or `--privileged`. On Windows Docker Desktop (WSL2) or macOS (Lima/Docker VM), `
 the VM network interface or fails with permission errors.
 
 **The Solution:** MIRRORGRID embeds **Toxiproxy** sidecars or per-edge proxies:
+
 - Each service edge `A -> B` communicates via a dedicated Toxiproxy TCP port.
 - To inject 200ms latency, the fault engine invokes Toxiproxy's HTTP API:
   `POST /proxies/edge_orders_payments/toxics` with `{ type: "latency", attributes: { latency: 200 } }`.
@@ -129,6 +132,7 @@ Users often want the fidelity of containers for their target service, but cannot
 overhead of spinning up 50 containers on a developer laptop.
 
 In **HYBRID mode**:
+
 - Top-level ingress and the service under test run as real Docker containers.
 - 40 downstream dependency services run inside a single Node.js process using `LogicalRuntimeAdapter`.
 - An internal HTTP bridge routes calls crossing the boundary:
@@ -197,6 +201,7 @@ CREATE INDEX idx_edge_proxies_deployment ON container_edge_proxies(deployment_id
 ```
 
 ### Index rationale
+
 - `idx_deployments_world`: Rapid state query when loading world overview screen.
 - `uq_service_deployment`: Guarantees exactly one container per service per deployment.
 - `idx_containers_docker_id`: Enables fast callback correlation when receiving Docker daemon lifecycle events.
@@ -277,7 +282,7 @@ import type { RuntimeAdapter, WorldState, RuntimeMetrics } from '@mirrorgrid/sim
 
 export interface ContainerRuntimeConfig {
   readonly dockerSocketPath: string; // e.g. '/var/run/docker.sock' or '//./pipe/docker_engine'
-  readonly baseImage: string;        // 'mirrorgrid/synthetic-service:latest'
+  readonly baseImage: string; // 'mirrorgrid/synthetic-service:latest'
   readonly hostNetworkMode: boolean;
   readonly basePortRange: { readonly min: number; readonly max: number };
 }
@@ -338,6 +343,7 @@ export interface SyntheticServiceConfig {
 Routes registered under `/api/v1/worlds/:worldId/runtime` in `apps/control`.
 
 ### 1. Deploy World to Containers
+
 - `POST /api/v1/worlds/:worldId/runtime/deploy`
 - **Request Body (zod schema):**
   ```typescript
@@ -350,6 +356,7 @@ Routes registered under `/api/v1/worlds/:worldId/runtime` in `apps/control`.
 - **Response:** `202 Accepted` with `{ deploymentId: string, status: 'PROVISIONING' }`.
 
 ### 2. Get Container Fleet Status
+
 - `GET /api/v1/worlds/:worldId/runtime/fleet`
 - **Response:** `200 OK` with list of container states:
   ```json
@@ -372,10 +379,12 @@ Routes registered under `/api/v1/worlds/:worldId/runtime` in `apps/control`.
   ```
 
 ### 3. Restart Container
+
 - `POST /api/v1/worlds/:worldId/runtime/containers/:containerId/restart`
 - **Response:** `200 OK` with `{ status: 'RESTARTING' }`.
 
 ### 4. Fetch Container Logs
+
 - `GET /api/v1/worlds/:worldId/runtime/containers/:containerId/logs`
 - **Query Params:** `tail?: number`, `since?: string`
 - **Response:** `200 OK` with `{ logs: string[] }`.
@@ -385,6 +394,7 @@ Routes registered under `/api/v1/worlds/:worldId/runtime` in `apps/control`.
 ## 9. UI
 
 ### Container Fleet Manager (`apps/web/src/app/worlds/[worldId]/fleet/page.tsx`)
+
 - **Spec alignment:** §55 (Container Mesh Inspector), §56 (Live Container Logs).
 - **Layout:**
   - Header: World name, active deployment badge (`Mode: CONTAINER`, `Total Containers: N`, `Healthy: N/N`).
@@ -431,15 +441,18 @@ Routes registered under `/api/v1/worlds/:worldId/runtime` in `apps/control`.
 ## 11. Testing
 
 ### Unit tests (`packages/container-runtime/tests/unit`)
+
 - `port-allocator.test.ts`: Verify non-overlapping host port assignment across 50 concurrent services.
 - `cpu-burner.test.ts`: Verify CPU burn loop consumes approximate requested milliseconds without blocking event loop indefinitely.
 - `synthetic-routes.test.ts`: Verify complex downstream call graph execution and timeout enforcement.
 
 ### Integration tests (`apps/runtime-agent/tests/integration`)
+
 - `docker-lifecycle.test.ts`: Spin up 3 synthetic containers, verify health probes pass, gracefully terminate.
 - `toxiproxy-fault.test.ts`: Inject 150ms latency toxic on inter-container edge and assert measured round-trip increases by 150ms.
 
 ### Conformance tests (`packages/conformance/tests`)
+
 - Run `runConformanceSuite(logicalAdapter)`.
 - Run `runConformanceSuite(containerAdapter)`.
 - Assert both implementations satisfy 100% of behavioral assertions.

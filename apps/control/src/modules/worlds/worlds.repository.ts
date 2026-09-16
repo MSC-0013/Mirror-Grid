@@ -15,10 +15,7 @@ export class WorldsRepository {
         .orderBy(desc(worlds.createdAt))
         .limit(limit)
         .offset(offset),
-      db
-        .select({ total: count() })
-        .from(worlds)
-        .where(eq(worlds.organizationId, organizationId)),
+      db.select({ total: count() }).from(worlds).where(eq(worlds.organizationId, organizationId)),
     ]);
 
     const total = totalResult[0]?.total ?? 0;
@@ -45,11 +42,7 @@ export class WorldsRepository {
     return result[0] || null;
   }
 
-  public async createWorld(
-    organizationId: string,
-    createdBy: string,
-    input: CreateWorldInput
-  ) {
+  public async createWorld(organizationId: string, createdBy: string, input: CreateWorldInput) {
     const result = await db
       .insert(worlds)
       .values({
@@ -66,11 +59,7 @@ export class WorldsRepository {
     return result[0];
   }
 
-  public async updateWorld(
-    organizationId: string,
-    id: string,
-    input: UpdateWorldInput
-  ) {
+  public async updateWorld(organizationId: string, id: string, input: UpdateWorldInput) {
     const result = await db
       .update(worlds)
       .set({

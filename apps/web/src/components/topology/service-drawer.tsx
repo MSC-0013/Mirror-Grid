@@ -54,7 +54,9 @@ export function ServiceDrawer({
   dependencies,
   onClose,
 }: ServiceDrawerProps) {
-  const [activeTab, setActiveTab] = useState<'overview' | 'instances' | 'dependencies' | 'policies'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'instances' | 'dependencies' | 'policies'
+  >('overview');
 
   if (!service) return null;
 
@@ -160,7 +162,8 @@ export function ServiceDrawer({
               fontSize: 12,
               fontWeight: activeTab === tab ? 600 : 400,
               color: activeTab === tab ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-              borderBottom: activeTab === tab ? '2px solid var(--color-primary)' : '2px solid transparent',
+              borderBottom:
+                activeTab === tab ? '2px solid var(--color-primary)' : '2px solid transparent',
               textTransform: 'capitalize',
             }}
           >
@@ -174,29 +177,71 @@ export function ServiceDrawer({
         {activeTab === 'overview' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-              <div style={{ padding: 12, borderRadius: 6, border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>Current Status</span>
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 6,
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-surface)',
+                }}
+              >
+                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                  Current Status
+                </span>
                 <p style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>{service.status}</p>
               </div>
-              <div style={{ padding: 12, borderRadius: 6, border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>Target Instances</span>
-                <p style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>{service.targetInstances} Replicas</p>
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 6,
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-surface)',
+                }}
+              >
+                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                  Target Instances
+                </span>
+                <p style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>
+                  {service.targetInstances} Replicas
+                </p>
               </div>
-              <div style={{ padding: 12, borderRadius: 6, border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>Concurrency Limit</span>
-                <p style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>{service.concurrencyLimit} Slots</p>
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 6,
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-surface)',
+                }}
+              >
+                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                  Concurrency Limit
+                </span>
+                <p style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>
+                  {service.concurrencyLimit} Slots
+                </p>
               </div>
-              <div style={{ padding: 12, borderRadius: 6, border: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)' }}>
-                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>Queue Capacity</span>
-                <p style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>{service.queueCapacity} Requests</p>
+              <div
+                style={{
+                  padding: 12,
+                  borderRadius: 6,
+                  border: '1px solid var(--color-border)',
+                  backgroundColor: 'var(--color-surface)',
+                }}
+              >
+                <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                  Queue Capacity
+                </span>
+                <p style={{ fontSize: 14, fontWeight: 600, marginTop: 4 }}>
+                  {service.queueCapacity} Requests
+                </p>
               </div>
             </div>
 
             <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
               <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>Dependency Summary</h3>
               <p style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-                • <strong>{inbound.length}</strong> services depend on this service.<br />
-                • <strong>{outbound.length}</strong> downstream services called.
+                • <strong>{inbound.length}</strong> services depend on this service.
+                <br />• <strong>{outbound.length}</strong> downstream services called.
               </p>
             </div>
           </div>
@@ -205,7 +250,7 @@ export function ServiceDrawer({
         {activeTab === 'instances' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <h3 style={{ fontSize: 13, fontWeight: 600 }}>Active Fleet Instances</h3>
-            {(!service.instances || service.instances.length === 0) ? (
+            {!service.instances || service.instances.length === 0 ? (
               <p style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
                 {service.targetInstances} instance(s) allocated ({service.status}).
               </p>
@@ -252,26 +297,68 @@ export function ServiceDrawer({
         {activeTab === 'dependencies' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             <div>
-              <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <h3
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginBottom: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
                 <Layers size={14} /> Outbound Calls ({outbound.length})
               </h3>
               {outbound.length === 0 ? (
-                <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>No outbound dependencies (Leaf/Sink service).</p>
+                <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+                  No outbound dependencies (Leaf/Sink service).
+                </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {outbound.map((d) => (
-                    <div key={d.id} style={{ padding: 10, borderRadius: 6, border: '1px solid var(--color-border)' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div
+                      key={d.id}
+                      style={{
+                        padding: 10,
+                        borderRadius: 6,
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                        }}
+                      >
                         <span style={{ fontSize: 13, fontWeight: 600 }}>
                           → {serviceMap.get(d.targetServiceId) || d.targetServiceId.slice(0, 8)}
                         </span>
-                        <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>{d.timeoutMs}ms timeout</span>
+                        <span style={{ fontSize: 11, color: 'var(--color-text-secondary)' }}>
+                          {d.timeoutMs}ms timeout
+                        </span>
                       </div>
                       <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-                        <span style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            padding: '2px 5px',
+                            borderRadius: 4,
+                            backgroundColor: 'var(--color-surface)',
+                            border: '1px solid var(--color-border)',
+                          }}
+                        >
                           {d.criticality}
                         </span>
-                        <span style={{ fontSize: 10, padding: '2px 5px', borderRadius: 4, backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)' }}>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            padding: '2px 5px',
+                            borderRadius: 4,
+                            backgroundColor: 'var(--color-surface)',
+                            border: '1px solid var(--color-border)',
+                          }}
+                        >
                           Retry: {d.retryPolicy.maxAttempts}x ({d.retryPolicy.type})
                         </span>
                       </div>
@@ -282,15 +369,33 @@ export function ServiceDrawer({
             </div>
 
             <div style={{ borderTop: '1px solid var(--color-border)', paddingTop: 16 }}>
-              <h3 style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <h3
+                style={{
+                  fontSize: 13,
+                  fontWeight: 600,
+                  marginBottom: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
+                }}
+              >
                 <Layers size={14} /> Inbound Callers ({inbound.length})
               </h3>
               {inbound.length === 0 ? (
-                <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>No callers (Entry / Gateway service).</p>
+                <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
+                  No callers (Entry / Gateway service).
+                </p>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {inbound.map((d) => (
-                    <div key={d.id} style={{ padding: 10, borderRadius: 6, border: '1px solid var(--color-border)' }}>
+                    <div
+                      key={d.id}
+                      style={{
+                        padding: 10,
+                        borderRadius: 6,
+                        border: '1px solid var(--color-border)',
+                      }}
+                    >
                       <span style={{ fontSize: 13, fontWeight: 600 }}>
                         ← {serviceMap.get(d.sourceServiceId) || d.sourceServiceId.slice(0, 8)}
                       </span>
@@ -306,33 +411,57 @@ export function ServiceDrawer({
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
             {outbound.length === 0 ? (
               <p style={{ fontSize: 12, color: 'var(--color-text-tertiary)' }}>
-                Policies are configured on outbound dependency edges. This service has no outgoing edges.
+                Policies are configured on outbound dependency edges. This service has no outgoing
+                edges.
               </p>
             ) : (
               outbound.map((d) => (
-                <div key={d.id} style={{ padding: 12, borderRadius: 6, border: '1px solid var(--color-border)' }}>
+                <div
+                  key={d.id}
+                  style={{ padding: 12, borderRadius: 6, border: '1px solid var(--color-border)' }}
+                >
                   <h4 style={{ fontSize: 12, fontWeight: 600, marginBottom: 8 }}>
                     Edge: {service.name} → {serviceMap.get(d.targetServiceId)}
                   </h4>
 
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}
+                      >
                         <Shield size={13} style={{ color: 'var(--color-info)' }} />
                         <span style={{ fontSize: 11, fontWeight: 600 }}>Circuit Breaker</span>
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', paddingLeft: 19 }}>
-                        Threshold: {d.circuitBreakerPolicy.threshold} failures • Window: {d.circuitBreakerPolicy.windowMs}ms • Cooldown: {d.circuitBreakerPolicy.cooldownMs}ms
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--color-text-secondary)',
+                          paddingLeft: 19,
+                        }}
+                      >
+                        Threshold: {d.circuitBreakerPolicy.threshold} failures • Window:{' '}
+                        {d.circuitBreakerPolicy.windowMs}ms • Cooldown:{' '}
+                        {d.circuitBreakerPolicy.cooldownMs}ms
                       </div>
                     </div>
 
                     <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                      <div
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}
+                      >
                         <RefreshCw size={13} style={{ color: 'var(--color-warning)' }} />
                         <span style={{ fontSize: 11, fontWeight: 600 }}>Retry Policy</span>
                       </div>
-                      <div style={{ fontSize: 11, color: 'var(--color-text-secondary)', paddingLeft: 19 }}>
-                        Max Attempts: {d.retryPolicy.maxAttempts} • Base: {d.retryPolicy.baseDelayMs}ms • Jitter: {d.retryPolicy.jitterFactor * 100}% • Budget: {d.retryPolicy.budgetPercent}%
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--color-text-secondary)',
+                          paddingLeft: 19,
+                        }}
+                      >
+                        Max Attempts: {d.retryPolicy.maxAttempts} • Base:{' '}
+                        {d.retryPolicy.baseDelayMs}ms • Jitter: {d.retryPolicy.jitterFactor * 100}%
+                        • Budget: {d.retryPolicy.budgetPercent}%
                       </div>
                     </div>
                   </div>

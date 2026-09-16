@@ -3,12 +3,14 @@
 ## 1. Context
 
 Heavy distributed-systems workflows cannot run synchronously inside Fastify HTTP request handlers:
+
 - A 5-minute Monte Carlo experiment run or multi-world stress test exceeds gateway HTTP timeouts (typically 30s).
 - Running long CPU-intensive tasks on web server threads degrades API responsiveness for all users.
 - If a server crashes midway through a long simulation, in-memory state is lost with no audit trail or recovery.
 
 To handle asynchronous computation reliably, MIRRORGRID requires an industrial-grade asynchronous
 job execution platform:
+
 1. **Transactional Enqueue:** Jobs are enqueued in the same Postgres transaction as domain state,
    guaranteeing that an uncommitted transaction never spawns an orphan job.
 2. **Zero-Duplicate Concurrency:** Worker pools claim jobs concurrently using PostgreSQL `FOR UPDATE SKIP LOCKED`,
@@ -32,6 +34,7 @@ job execution platform:
 ## 3. Scope
 
 ### In scope
+
 - `packages/jobs`: Core distributed job engine, lease heartbeat manager, and priority queue processor.
 - Concurrency-safe job claiming using PostgreSQL `FOR UPDATE SKIP LOCKED`.
 - Monotonic fencing tokens preventing split-brain writes during worker pauses.
@@ -42,6 +45,7 @@ job execution platform:
 - Web UI: Background Jobs Dashboard & DLQ Triage Console (§72).
 
 ### Explicitly out of scope
+
 - Kafka-based pub/sub message streaming (M08 — M07 is task/worker execution; M08 is CQRS event bus).
 - Complex DAG dependency execution workflows (M07 jobs are discrete units of work).
 - Real-time WebSocket job progress streaming (M08 — polling used until M08).
@@ -53,16 +57,19 @@ job execution platform:
 ### Transactional Job Enqueue (Why Postgres over external broker)
 
 External job queues like RabbitMQ or BullMQ suffer from the dual-write problem:
+
 ```
 // THE BUGGY PATTERN:
 await db.insert(experiments).values(experimentData); // Succeeds
 await queue.push(experimentId);                     // Network error! Job lost forever.
 ```
+
 If the database insert succeeds but the queue push fails, the system is permanently inconsistent.
 Conversely, if the queue push succeeds and the DB transaction rolls back, a worker attempts to process
 a nonexistent entity.
 
 In MIRRORGRID, jobs are stored in PostgreSQL:
+
 ```typescript
 // THE ATOMIC PATTERN:
 await db.transaction(async (tx) => {
@@ -74,6 +81,7 @@ await db.transaction(async (tx) => {
   });
 });
 ```
+
 The job exists if and only if the business transaction commits.
 
 ### Concurrency-Safe Claim via `FOR UPDATE SKIP LOCKED`
@@ -99,6 +107,7 @@ WHERE id = (
 )
 RETURNING *;
 ```
+
 - `SKIP LOCKED` instructs Postgres to skip rows currently locked by other concurrent workers.
 - 50 workers querying simultaneously execute in parallel with **zero lock waits** and **zero duplicate claims**.
 
@@ -132,6 +141,7 @@ Split-brain write corruption is mathematically impossible.
 ### Poison Pill Detection & Dead-Letter Queue (DLQ)
 
 If a job throws an uncaught exception (e.g. malformed data causing memory overflow):
+
 1. The error message and full stack trace are appended to `job_attempts`.
 2. If `attempts < max_attempts`: Status returns to `QUEUED` with exponential backoff:
    $$\text{backoff} = \min(3600\text{s}, 2^{\text{attempt}} \times 5\text{s}) + \text{jitter}$$
@@ -205,6 +215,7 @@ CREATE INDEX idx_dlq_status ON dead_letter_jobs(resolution_status, quarantined_a
 ```
 
 ### Index rationale
+
 - `idx_jobs_claim`: High-performance partial index covering only runnable jobs. The worker claim query
   never scans completed or archived records.
 - `idx_jobs_lease`: Partial index for rapid reaper queries that locate abandoned leases.
@@ -334,6 +345,7 @@ export interface DlqManager {
 Routes registered under `/api/v1/jobs` in `apps/control`.
 
 ### 1. Enqueue Async Job
+
 - `POST /api/v1/jobs`
 - **Request Body (zod schema):**
   ```typescript
@@ -349,19 +361,23 @@ Routes registered under `/api/v1/jobs` in `apps/control`.
 - **Response:** `202 Accepted` with `{ jobId: string, status: 'QUEUED' }`.
 
 ### 2. Get Job Status & History
+
 - `GET /api/v1/jobs/:id`
 - **Response:** `200 OK` with job status, lease information, and array of previous attempts.
 
 ### 3. Query Dead-Letter Queue
+
 - `GET /api/v1/jobs/dlq`
 - **Query Params:** `status=UNRESOLVED&page=1&limit=25`
 - **Response:** `200 OK` with list of quarantined poison pills.
 
 ### 4. Replay Dead-Letter Job
+
 - `POST /api/v1/jobs/dlq/:dlqId/replay`
 - **Response:** `200 OK` with `{ status: 'REPLAYED', newJobId: string }`.
 
 ### 5. Discard Dead-Letter Job
+
 - `POST /api/v1/jobs/dlq/:dlqId/discard`
 - **Response:** `200 OK` with `{ status: 'DISCARDED' }`.
 
@@ -370,6 +386,7 @@ Routes registered under `/api/v1/jobs` in `apps/control`.
 ## 9. UI
 
 ### 1. Background Jobs Dashboard (`apps/web/src/app/settings/jobs/page.tsx`)
+
 - **Spec alignment:** §72 (Background Workers & Asynchronous Platform).
 - **Layout:**
   - HUD Metric Cards: `Active Workers (N)`, `Queued Jobs (N)`, `Jobs/min Throughput`, `DLQ Quarantined (N red badge)`.
@@ -377,6 +394,7 @@ Routes registered under `/api/v1/jobs` in `apps/control`.
   - Active Jobs Drawer: Live table of currently running jobs with duration timers and active worker IDs.
 
 ### 2. DLQ Triage Console (`apps/web/src/app/settings/jobs/dlq/page.tsx`)
+
 - **Spec alignment:** §72 (Dead-Letter Triage Console).
 - **Layout:**
   - Header: Alert banner showing unresolved quarantined jobs count.
@@ -409,17 +427,20 @@ Routes registered under `/api/v1/jobs` in `apps/control`.
 ## 11. Testing
 
 ### Unit tests (`packages/jobs/tests/unit`)
+
 - `backoff.test.ts`: Verify exponential backoff curves and jitter boundaries.
 - `fencing-token.test.ts`: Assert stale fencing tokens are rejected during completion writes.
 - `dlq.test.ts`: Assert poison pill transitions from `async_jobs` to `dead_letter_jobs` after attempt threshold.
 
 ### Concurrency Stress Test (`packages/jobs/tests/concurrency`)
+
 - Enqueue 500 jobs across 3 priority levels.
 - Spin up 10 parallel worker threads in Node.js.
 - Assert every job is processed exactly once (zero duplicate execution).
 - Assert higher priority jobs complete before lower priority jobs.
 
 ### Integration tests (`apps/control/tests/integration/jobs`)
+
 - Verify transactional enqueue rolls back if enclosing DB transaction throws.
 - Verify DLQ replay re-enqueues job with clean attempt count and records resolution in audit log.
 
@@ -435,7 +456,10 @@ The gate test executes high-concurrency worker stress tests and validates these 
 // tests/gates/verify-concurrency.ts
 
 // Assertion 1: 500 concurrent jobs processed by 10 workers with exactly-once execution
-assert(totalProcessed === 500 && duplicateExecutions === 0, 'Assertion 1: Exactly-once execution verified');
+assert(
+  totalProcessed === 500 && duplicateExecutions === 0,
+  'Assertion 1: Exactly-once execution verified',
+);
 
 // Assertion 2: Stale lease fencing token write is rejected
 assert(staleTokenRejected, 'Assertion 2: Monotonic fencing token prevents zombie write');
@@ -457,7 +481,7 @@ assert(gracefulDrainCompleted, 'Assertion 5: Worker pool drains gracefully on sh
 1. **Tight polling loops against Postgres:** If workers poll without delay when queues are empty,
    Postgres CPU spikes to 100%. Always use `LISTEN/NOTIFY` combined with exponential polling backoff.
 2. **Missing fencing token checks on multi-step jobs:** If a job performs 3 discrete mutations,
-   it must verify the lease and fencing token before *each* mutating step, not just at the end.
+   it must verify the lease and fencing token before _each_ mutating step, not just at the end.
 3. **Long transactions holding row locks:** The claim query must immediately commit its transaction
    once the status is updated to `CLAIMED`. Never keep the claim transaction open while the job executes.
 4. **Swallowing unhandled promise rejections:** A crash in a job handler must bubble to the worker supervisor

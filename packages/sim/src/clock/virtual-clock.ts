@@ -23,7 +23,7 @@ export class VirtualClock implements ClockDriverTarget {
   schedule(event: SimEvent): bigint {
     if (event.timeUs < this.currentUs) {
       throw new Error(
-        `Cannot schedule event in the past (event.timeUs: ${event.timeUs} < current: ${this.currentUs})`
+        `Cannot schedule event in the past (event.timeUs: ${event.timeUs} < current: ${this.currentUs})`,
       );
     }
     const seq = ++this.seqCounter;

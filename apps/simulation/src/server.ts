@@ -61,7 +61,8 @@ export async function startServer() {
   }
 }
 
-const isDirectRun = process.argv[1]?.endsWith('server.ts') || process.argv[1]?.endsWith('server.js');
+const isDirectRun =
+  process.argv[1]?.endsWith('server.ts') || process.argv[1]?.endsWith('server.js');
 if (isDirectRun) {
   void startServer();
 }

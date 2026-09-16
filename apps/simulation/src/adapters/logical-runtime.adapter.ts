@@ -63,7 +63,10 @@ export class LogicalRuntimeAdapter implements RuntimeAdapter {
       name: s.name,
       concurrencyLimit: s.concurrencyLimit,
       queueCapacity: s.queueCapacity,
-      serviceTimeTable: typeof s.config?.serviceTimeTable === 'string' ? s.config.serviceTimeTable : 'default_service',
+      serviceTimeTable:
+        typeof s.config?.serviceTimeTable === 'string'
+          ? s.config.serviceTimeTable
+          : 'default_service',
     }));
 
     const engineEdges: EdgeSpec[] = spec.dependencies.map((d) => ({
@@ -92,7 +95,10 @@ export class LogicalRuntimeAdapter implements RuntimeAdapter {
     return handle;
   }
 
-  async applyWorkload(handle: RuntimeHandle, workload: DomainWorkloadSpec): Promise<WorkloadHandle> {
+  async applyWorkload(
+    handle: RuntimeHandle,
+    workload: DomainWorkloadSpec,
+  ): Promise<WorkloadHandle> {
     const run = this.runs.get(handle.id);
     if (!run) {
       throw new Error(`Run not found: ${handle.id}`);
@@ -139,30 +145,32 @@ export class LogicalRuntimeAdapter implements RuntimeAdapter {
     const driver = driverType === 'REALTIME' ? new RealtimeDriver() : new FastDriver();
     run.driver = driver;
 
-    run.runPromise = run.engine.run({
-      seed: run.spec.seed,
-      workload,
-      driver,
-      retainSamples: true,
-      onMetrics: (rows) => {
-        for (const row of rows) {
-          run.sampleBuffer.push({
-            serviceId: row.serviceId,
-            virtualTimeUs: row.virtualTimeUs,
-            wallTimeMs: Date.now(),
-            requestsCompleted: row.requestsTotal - row.requestsFailed,
-            requestsFailed: row.requestsFailed,
-            latencySamplesUs: Array.from(row.latencySamplesUs),
-            queueDepth: row.queueDepth,
-            activeSlots: row.activeSlots,
-            circuitState: 'CLOSED',
-          });
-        }
-      },
-    }).then((result) => {
-      run.lastResult = result;
-      return result;
-    });
+    run.runPromise = run.engine
+      .run({
+        seed: run.spec.seed,
+        workload,
+        driver,
+        retainSamples: true,
+        onMetrics: (rows) => {
+          for (const row of rows) {
+            run.sampleBuffer.push({
+              serviceId: row.serviceId,
+              virtualTimeUs: row.virtualTimeUs,
+              wallTimeMs: Date.now(),
+              requestsCompleted: row.requestsTotal - row.requestsFailed,
+              requestsFailed: row.requestsFailed,
+              latencySamplesUs: Array.from(row.latencySamplesUs),
+              queueDepth: row.queueDepth,
+              activeSlots: row.activeSlots,
+              circuitState: 'CLOSED',
+            });
+          }
+        },
+      })
+      .then((result) => {
+        run.lastResult = result;
+        return result;
+      });
   }
 
   async *observe(handle: RuntimeHandle): AsyncIterable<RuntimeSample> {

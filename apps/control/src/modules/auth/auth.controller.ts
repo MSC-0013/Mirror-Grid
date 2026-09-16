@@ -15,7 +15,7 @@ export class AuthController {
     const { organization } = await this.service.signup(parse.data);
     const loginResult = await this.service.login(
       { email: parse.data.email, password: parse.data.password },
-      { ip: req.ip, userAgent: req.headers['user-agent'] }
+      { ip: req.ip, userAgent: req.headers['user-agent'] },
     );
 
     reply.setCookie('mg_session', loginResult.token, {
@@ -83,7 +83,10 @@ export class AuthController {
     });
   }
 
-  public async validateToken(req: FastifyRequest<{ Body: { token: string } }>, reply: FastifyReply) {
+  public async validateToken(
+    req: FastifyRequest<{ Body: { token: string } }>,
+    reply: FastifyReply,
+  ) {
     const token = req.body?.token || req.cookies.mg_session;
     if (!token) {
       return reply.status(200).send({ valid: false });

@@ -3,6 +3,7 @@
 ## 1. Context
 
 Nothing ships without this. M00 establishes:
+
 - The monorepo shape every other milestone adds to
 - CI that is the project's immune system: typecheck, lint, unit, integration, contract, gitleaks,
   the no-mock-data assertion
@@ -29,6 +30,7 @@ countermeasure — the frontend cannot render a screen whose endpoint does not e
 ## 3. Scope
 
 ### In scope
+
 - Turborepo monorepo with npm workspaces
 - Full root configuration: tsconfig, ESLint, Prettier, editorconfig, gitignore, CLAUDE.md, .env.example
 - GitHub Actions CI (PR suite)
@@ -41,6 +43,7 @@ countermeasure — the frontend cannot render a screen whose endpoint does not e
 - Migration 001_core.sql
 
 ### Explicitly out of scope
+
 - Redis, Kafka, NATS, OpenSearch, MinIO, Prometheus, Grafana, Jaeger, OTel, Toxiproxy
   (none of these start at M0; the compose file defines them but they are inactive)
 - Simulation engine (M2)
@@ -68,11 +71,11 @@ broker). When M8 turns on the `events` profile, Kafka is already correctly defin
 
 ### Health semantics (defined here, consumed by all later milestones)
 
-| Probe | Question | Fails when |
-|---|---|---|
-| `/health/live` | Is the process alive? | Event loop wedged, unrecoverable state. NEVER because a dependency is down. |
-| `/health/ready` | Can this service perform its role right now? | A REQUIRED dependency is unavailable |
-| `/health/status` | What is each dependency's state? | Never — it reports, it does not fail |
+| Probe            | Question                                     | Fails when                                                                  |
+| ---------------- | -------------------------------------------- | --------------------------------------------------------------------------- |
+| `/health/live`   | Is the process alive?                        | Event loop wedged, unrecoverable state. NEVER because a dependency is down. |
+| `/health/ready`  | Can this service perform its role right now? | A REQUIRED dependency is unavailable                                        |
+| `/health/status` | What is each dependency's state?             | Never — it reports, it does not fail                                        |
 
 A `degraded` dependency going down moves `/health/status` to DEGRADED and leaves readiness green.
 This is the §78 partial-failure behaviour and it is impossible to retrofit after M0.
@@ -165,6 +168,7 @@ CREATE INDEX worlds_org_status_idx ON worlds (organization_id, status);
 ```
 
 **Index rationale:**
+
 - `sessions_token_hash_idx` is partial (`WHERE is_active = true`) so the hot auth path never scans
   expired sessions. The `sessions` table grows without the lookup slowing down.
 - `worlds_org_status_idx` covers the dashboard list query (`WHERE organization_id = $1`).
@@ -176,6 +180,7 @@ CREATE INDEX worlds_org_status_idx ON worlds (organization_id, status);
 ## 6. Packages
 
 ### packages/config
+
 ```
 src/
   env.ts        zod safeParse of process.env -> frozen config export.
@@ -184,6 +189,7 @@ src/
 ```
 
 ### packages/logging
+
 ```
 src/
   logger.ts     pino 10 factory: level from config, serializers for req/res,
@@ -192,6 +198,7 @@ src/
 ```
 
 ### packages/validation
+
 ```
 src/
   schemas/
@@ -201,6 +208,7 @@ src/
 ```
 
 ### packages/platform
+
 ```
 src/
   health/
@@ -213,6 +221,7 @@ src/
 ```
 
 ### packages/db
+
 ```
 src/
   client.ts         postgres.js connection (from config)
@@ -225,6 +234,7 @@ drizzle.config.ts
 ```
 
 ### apps/gateway
+
 ```
 src/
   app.ts                Fastify factory: request-id plugin, CORS, error handler,
@@ -241,6 +251,7 @@ src/
 ```
 
 ### apps/control
+
 ```
 src/
   core/
@@ -272,6 +283,7 @@ src/
 ```
 
 ### apps/web
+
 ```
 src/
   app/
@@ -359,13 +371,15 @@ export class AppError extends Error {
     public readonly message: string,
     public readonly statusCode: number,
     public readonly details?: unknown,
-  ) { super(message); }
+  ) {
+    super(message);
+  }
 
-  static notFound(resource: string, id?: string): AppError
-  static forbidden(action: string): AppError
-  static badRequest(message: string, details?: unknown): AppError
-  static conflict(message: string): AppError
-  static internal(message: string): AppError
+  static notFound(resource: string, id?: string): AppError;
+  static forbidden(action: string): AppError;
+  static badRequest(message: string, details?: unknown): AppError;
+  static conflict(message: string): AppError;
+  static internal(message: string): AppError;
 }
 ```
 
@@ -376,6 +390,7 @@ export class AppError extends Error {
 All routes are behind `/api/v1` except `/health/*` and `/openapi.json`.
 
 ### Auth
+
 ```
 POST   /api/v1/auth/login       loginBody: { email, password }
                                  -> 200 { user } + Set-Cookie: session=...; HttpOnly; SameSite=Lax
@@ -384,6 +399,7 @@ GET    /api/v1/auth/me          -> 200 { id, email, displayName, organizationId 
 ```
 
 ### Worlds
+
 ```
 GET    /api/v1/worlds           ?page&limit -> 200 { data: World[], meta: PaginationMeta }
 POST   /api/v1/worlds           createWorldBody -> 201 { data: World }
@@ -393,6 +409,7 @@ DELETE /api/v1/worlds/:id       -> 204
 ```
 
 ### Health
+
 ```
 GET    /health/live             -> 200 { status: 'ok' }
 GET    /health/ready            -> 200 { status: 'ok' } | 503 { status: 'not_ready', dependencies: [...] }
@@ -400,11 +417,13 @@ GET    /health/status           -> 200 ServiceHealthReport (never 5xx)
 ```
 
 ### OpenAPI
+
 ```
 GET    /openapi.json            -> 200 (OpenAPI 3.1 document)
 ```
 
 **Zod schema excerpt:**
+
 ```typescript
 // worlds.schema.ts
 import { z } from 'zod/v4';
@@ -419,9 +438,18 @@ export const worldResponse = z.object({
   id: z.string().uuid(),
   name: z.string(),
   description: z.string().nullable(),
-  status: z.enum(['IDLE','CONFIGURING','READY','RUNNING','PAUSED',
-                  'STOPPING','STOPPED','FAILED','ARCHIVED']),
-  runtimeMode: z.enum(['LOGICAL','CONTAINER','HYBRID']),
+  status: z.enum([
+    'IDLE',
+    'CONFIGURING',
+    'READY',
+    'RUNNING',
+    'PAUSED',
+    'STOPPING',
+    'STOPPED',
+    'FAILED',
+    'ARCHIVED',
+  ]),
+  runtimeMode: z.enum(['LOGICAL', 'CONTAINER', 'HYBRID']),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
 });
@@ -432,6 +460,7 @@ export const worldResponse = z.object({
 ## 9. UI
 
 ### Login page (spec §7)
+
 - Centered card, 480px max-width
 - Email + password fields, "Sign in" button
 - Error inline under the field that failed, not a generic banner
@@ -439,6 +468,7 @@ export const worldResponse = z.object({
 - No "remember me" toggle (sessions expire server-side per config)
 
 ### App shell (spec §8–10, §12)
+
 - Left sidebar (240px fixed): MIRRORGRID logo, nav links (Dashboard, Worlds, Events, Experiments,
   Reliability, Snapshots, Workers, Settings), user avatar + name at bottom
 - Top bar: breadcrumbs, notification bell, user menu (profile, logout)
@@ -447,42 +477,55 @@ export const worldResponse = z.object({
 - System status is server-component data from `/health/status`; re-fetched every 30s
 
 ### Dashboard (spec §13–14)
+
 - Four stat cards: Total Worlds, Active Experiments, Events Today, System Health
 - All numbers from real API rows — if zero, card says "0" not a skeleton that never loads
 - Recent worlds list (last 5 modified) linking to `/worlds/:id`
 
 ### Worlds list (spec §15)
+
 - Grid of World cards: name, description, status badge, runtime-mode chip, created date
 - "New World" button top-right opens create-world modal
 - Empty state: illustration + "Create your first world" CTA (spec §55)
 
 ### Create-world modal (spec §16)
+
 - Name (required), description (optional), runtime-mode radio (LOGICAL default)
 - Inline validation on submit; on success close modal and optimistically add card
 - On error: display AppError message with requestId
 
 ### Design tokens (tokens.css)
+
 ```css
 :root {
-  --color-bg:        #FFFFFF;
-  --color-primary:   #111111;
-  --color-secondary: #6B7280;
-  --color-border:    #E5E7EB;
-  --color-surface:   #F8F9FA;
+  --color-bg: #ffffff;
+  --color-primary: #111111;
+  --color-secondary: #6b7280;
+  --color-border: #e5e7eb;
+  --color-surface: #f8f9fa;
 
   /* Semantic */
-  --color-success:   #16A34A;
-  --color-warning:   #D97706;
-  --color-error:     #DC2626;
-  --color-info:      #2563EB;
-  --color-neutral:   #64748B;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-error: #dc2626;
+  --color-info: #2563eb;
+  --color-neutral: #64748b;
 
   /* Spacing: 4-point scale */
-  --space-1: 4px;  --space-2: 8px;  --space-3: 12px; --space-4: 16px;
-  --space-5: 20px; --space-6: 24px; --space-8: 32px; --space-10: 40px;
-  --space-12: 48px; --space-16: 64px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
 
-  --radius-sm: 4px; --radius-md: 8px; --radius-lg: 12px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
   --font-sans: 'Inter', system-ui, sans-serif;
 }
 ```
@@ -544,6 +587,7 @@ Each step is independently committable. Prefix commits with `M00:`.
 ## 11. Testing
 
 ### Unit
+
 - `AppError` static factories return correct statusCode and code
 - `HealthProbe`: readiness fails when a required dependency is UNHEALTHY; stays ready when degraded
 - `config` safeParse: missing required vars exit; optional vars get defaults
@@ -551,16 +595,19 @@ Each step is independently committable. Prefix commits with `M00:`.
 - `worlds.service.ts`: duplicate name -> conflict error; invalid status transition -> bad request
 
 ### Integration (testcontainers — real Postgres)
+
 - `POST /auth/login` with correct creds -> 200 + cookie; wrong creds -> 401
 - `POST /auth/logout` invalidates session (subsequent `/auth/me` -> 401)
 - `GET /worlds` returns empty list for new org; created world appears
 - Migration: apply to blank DB succeeds; re-run is idempotent
 
 ### Contract
+
 - Served `/openapi.json` === committed `schemas/api/openapi.json` (byte-for-byte after stable sort)
 - No file in the repo matches the glob `**/mock-data.ts`
 
 ### E2E (Playwright)
+
 - Sign in -> create world "Metro-01" -> appears in list -> page reload persists it
 - Stopping Postgres -> `/health/ready` returns 503; `/health/live` returns 200
 
@@ -573,6 +620,7 @@ npm run verify:m0
 ```
 
 Assertions (in order):
+
 1. `docker compose --profile core up -d` -> Postgres healthy in under 30 seconds
 2. `npm run db:migrate` on clean DB succeeds; re-run is no-op (idempotent)
 3. Playwright: sign in -> create World "Metro-01" -> appears in list -> reload persists it.

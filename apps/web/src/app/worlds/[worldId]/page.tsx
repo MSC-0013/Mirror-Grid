@@ -18,7 +18,11 @@ import {
   Zap,
 } from 'lucide-react';
 import { TopologyCanvas } from '@/components/topology/topology-canvas';
-import { ServiceDrawer, type DrawerService, type DrawerDependency } from '@/components/topology/service-drawer';
+import {
+  ServiceDrawer,
+  type DrawerService,
+  type DrawerDependency,
+} from '@/components/topology/service-drawer';
 
 interface WorldData {
   id: string;
@@ -97,7 +101,9 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
       const runId = json.data.runId;
       setActiveRunId(runId);
 
-      await fetch(`http://localhost:4000/api/v1/simulation/runs/${runId}/start`, { method: 'POST' });
+      await fetch(`http://localhost:4000/api/v1/simulation/runs/${runId}/start`, {
+        method: 'POST',
+      });
     } catch (err) {
       console.error('Failed to start simulation:', err);
       setSimStatus('IDLE');
@@ -107,7 +113,9 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
   async function handleStopSimulation() {
     if (!activeRunId) return;
     try {
-      await fetch(`http://localhost:4000/api/v1/simulation/runs/${activeRunId}/stop`, { method: 'POST' });
+      await fetch(`http://localhost:4000/api/v1/simulation/runs/${activeRunId}/stop`, {
+        method: 'POST',
+      });
       setSimStatus('COMPLETED');
     } catch (err) {
       console.error('Failed to stop simulation:', err);
@@ -129,7 +137,9 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
           if (statusJson.data?.status === 'COMPLETED' || statusJson.data?.status === 'CANCELLED') {
             setSimStatus('COMPLETED');
             if (statusJson.data.finalStateHash) {
-              setSimMetrics((prev) => (prev ? { ...prev, stateHash: statusJson.data.finalStateHash } : null));
+              setSimMetrics((prev) =>
+                prev ? { ...prev, stateHash: statusJson.data.finalStateHash } : null,
+              );
             }
           }
         }
@@ -139,8 +149,14 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
           const buckets = metricsJson.data?.buckets || [];
           if (buckets.length > 0) {
             const latest = buckets[buckets.length - 1];
-            const totalReq = buckets.reduce((acc: number, b: any) => acc + (b.requestsTotal || 0), 0);
-            const totalFailed = buckets.reduce((acc: number, b: any) => acc + (b.requestsFailed || 0), 0);
+            const totalReq = buckets.reduce(
+              (acc: number, b: { requestsTotal?: number }) => acc + (b.requestsTotal || 0),
+              0,
+            );
+            const totalFailed = buckets.reduce(
+              (acc: number, b: { requestsFailed?: number }) => acc + (b.requestsFailed || 0),
+              0,
+            );
             setSimMetrics((prev) => ({
               p95LatencyMs: (latest.p95LatencyUs || 0) / 1000,
               throughput: Math.round(totalReq / buckets.length),
@@ -266,10 +282,21 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
   if (error || !world) {
     return (
       <div style={{ padding: 32 }}>
-        <div style={{ padding: 16, borderRadius: 8, backgroundColor: 'var(--color-error-bg)', color: 'var(--color-error)', border: '1px solid #FCA5A5' }}>
+        <div
+          style={{
+            padding: 16,
+            borderRadius: 8,
+            backgroundColor: 'var(--color-error-bg)',
+            color: 'var(--color-error)',
+            border: '1px solid #FCA5A5',
+          }}
+        >
           <strong>Error loading world:</strong> {error || 'World not found'}
         </div>
-        <Link href="/worlds" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16 }}>
+        <Link
+          href="/worlds"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16 }}
+        >
           <ArrowLeft size={16} /> Back to Worlds
         </Link>
       </div>
@@ -290,7 +317,16 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
         }}
       >
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, color: 'var(--color-text-secondary)', marginBottom: 4 }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              fontSize: 12,
+              color: 'var(--color-text-secondary)',
+              marginBottom: 4,
+            }}
+          >
             <Link href="/worlds" style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
               <ArrowLeft size={13} /> Worlds
             </Link>
@@ -306,8 +342,12 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
                 fontWeight: 600,
                 padding: '2px 8px',
                 borderRadius: 4,
-                backgroundColor: world.status === 'RUNNING' ? 'var(--color-success-bg)' : 'var(--color-surface)',
-                color: world.status === 'RUNNING' ? 'var(--color-success)' : 'var(--color-text-secondary)',
+                backgroundColor:
+                  world.status === 'RUNNING' ? 'var(--color-success-bg)' : 'var(--color-surface)',
+                color:
+                  world.status === 'RUNNING'
+                    ? 'var(--color-success)'
+                    : 'var(--color-text-secondary)',
                 border: '1px solid var(--color-border)',
               }}
             >
@@ -435,12 +475,21 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {metrics?.hasCycles ? (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-error)' }}>
+            <div
+              style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-error)' }}
+            >
               <AlertCircle size={14} />
               <span>Contains Cycles!</span>
             </div>
           ) : (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4, color: 'var(--color-success)' }}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                color: 'var(--color-success)',
+              }}
+            >
               <CheckCircle2 size={14} />
               <span>Valid DAG (Acyclic)</span>
             </div>
@@ -474,14 +523,14 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
                   simStatus === 'RUNNING'
                     ? '#DBEAFE'
                     : simStatus === 'COMPLETED'
-                    ? '#DCFCE7'
-                    : 'var(--color-surface)',
+                      ? '#DCFCE7'
+                      : 'var(--color-surface)',
                 color:
                   simStatus === 'RUNNING'
                     ? '#1D4ED8'
                     : simStatus === 'COMPLETED'
-                    ? '#15803D'
-                    : 'inherit',
+                      ? '#15803D'
+                      : 'inherit',
               }}
             >
               {simStatus}
@@ -515,8 +564,7 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
             <span style={{ color: 'var(--color-text-secondary)' }}>Errors:</span>
             <strong
               style={{
-                color:
-                  simMetrics && simMetrics.errorRate > 0.01 ? 'var(--color-error)' : 'inherit',
+                color: simMetrics && simMetrics.errorRate > 0.01 ? 'var(--color-error)' : 'inherit',
               }}
             >
               {simMetrics ? `${(simMetrics.errorRate * 100).toFixed(2)}%` : '—'}
@@ -535,7 +583,14 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
           {simMetrics?.stateHash && (
             <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ color: 'var(--color-text-secondary)' }}>Hash:</span>
-              <code style={{ fontSize: 11, backgroundColor: '#F3F4F6', padding: '2px 6px', borderRadius: 4 }}>
+              <code
+                style={{
+                  fontSize: 11,
+                  backgroundColor: '#F3F4F6',
+                  padding: '2px 6px',
+                  borderRadius: 4,
+                }}
+              >
                 {simMetrics.stateHash.slice(0, 16)}…
               </code>
             </div>
@@ -564,33 +619,77 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
 
       {/* Add Service Modal */}
       {isAddServiceOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-          <div style={{ width: 440, backgroundColor: '#FFFFFF', borderRadius: 8, padding: 24, boxShadow: 'var(--shadow-lg)' }}>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 60,
+          }}
+        >
+          <div
+            style={{
+              width: 440,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 8,
+              padding: 24,
+              boxShadow: 'var(--shadow-lg)',
+            }}
+          >
             <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Add Service</h3>
             {formError && (
-              <div style={{ padding: 8, backgroundColor: 'var(--color-error-bg)', color: 'var(--color-error)', fontSize: 12, borderRadius: 4, marginBottom: 12 }}>
+              <div
+                style={{
+                  padding: 8,
+                  backgroundColor: 'var(--color-error-bg)',
+                  color: 'var(--color-error)',
+                  fontSize: 12,
+                  borderRadius: 4,
+                  marginBottom: 12,
+                }}
+              >
                 {formError}
               </div>
             )}
-            <form onSubmit={handleCreateService} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <form
+              onSubmit={handleCreateService}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
               <div>
-                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Service Name</label>
+                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                  Service Name
+                </label>
                 <input
                   type="text"
                   required
                   placeholder="e.g. Orders, Payments, Inventory"
                   value={serviceName}
                   onChange={(e) => setServiceName(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border)',
+                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Service Type</label>
+                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                  Service Type
+                </label>
                 <select
                   value={serviceType}
                   onChange={(e) => setServiceType(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border)',
+                  }}
                 >
                   <option value="HTTP">HTTP Service</option>
                   <option value="GRPC">gRPC Microservice</option>
@@ -603,36 +702,57 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Target Replicas</label>
+                  <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                    Target Replicas
+                  </label>
                   <input
                     type="number"
                     min="1"
                     max="100"
                     value={targetInstances}
                     onChange={(e) => setTargetInstances(Number(e.target.value))}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      border: '1px solid var(--color-border)',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Concurrency Limit</label>
+                  <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                    Concurrency Limit
+                  </label>
                   <input
                     type="number"
                     min="1"
                     value={concurrencyLimit}
                     onChange={(e) => setConcurrencyLimit(Number(e.target.value))}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      border: '1px solid var(--color-border)',
+                    }}
                   />
                 </div>
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Queue Capacity</label>
+                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                  Queue Capacity
+                </label>
                 <input
                   type="number"
                   min="0"
                   value={queueCapacity}
                   onChange={(e) => setQueueCapacity(Number(e.target.value))}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border)',
+                  }}
                 />
               </div>
 
@@ -640,13 +760,25 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
                 <button
                   type="button"
                   onClick={() => setIsAddServiceOpen(false)}
-                  style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13 }}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border)',
+                    fontSize: 13,
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '8px 16px', borderRadius: 6, backgroundColor: 'var(--color-primary)', color: '#FFFFFF', fontSize: 13, fontWeight: 500 }}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 6,
+                    backgroundColor: 'var(--color-primary)',
+                    color: '#FFFFFF',
+                    fontSize: 13,
+                    fontWeight: 500,
+                  }}
                 >
                   Create Service
                 </button>
@@ -658,22 +790,61 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
 
       {/* Add Dependency Modal */}
       {isAddDepOpen && (
-        <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0, 0, 0, 0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}>
-          <div style={{ width: 440, backgroundColor: '#FFFFFF', borderRadius: 8, padding: 24, boxShadow: 'var(--shadow-lg)' }}>
-            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>Add Service Dependency</h3>
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 60,
+          }}
+        >
+          <div
+            style={{
+              width: 440,
+              backgroundColor: '#FFFFFF',
+              borderRadius: 8,
+              padding: 24,
+              boxShadow: 'var(--shadow-lg)',
+            }}
+          >
+            <h3 style={{ fontSize: 16, fontWeight: 600, marginBottom: 16 }}>
+              Add Service Dependency
+            </h3>
             {formError && (
-              <div style={{ padding: 8, backgroundColor: 'var(--color-error-bg)', color: 'var(--color-error)', fontSize: 12, borderRadius: 4, marginBottom: 12 }}>
+              <div
+                style={{
+                  padding: 8,
+                  backgroundColor: 'var(--color-error-bg)',
+                  color: 'var(--color-error)',
+                  fontSize: 12,
+                  borderRadius: 4,
+                  marginBottom: 12,
+                }}
+              >
                 {formError}
               </div>
             )}
-            <form onSubmit={handleCreateDependency} style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            <form
+              onSubmit={handleCreateDependency}
+              style={{ display: 'flex', flexDirection: 'column', gap: 12 }}
+            >
               <div>
-                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Source Service (Caller)</label>
+                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                  Source Service (Caller)
+                </label>
                 <select
                   required
                   value={depSource}
                   onChange={(e) => setDepSource(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border)',
+                  }}
                 >
                   <option value="">Select caller service...</option>
                   {services.map((s) => (
@@ -685,12 +856,19 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Target Service (Callee / Upstream)</label>
+                <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                  Target Service (Callee / Upstream)
+                </label>
                 <select
                   required
                   value={depTarget}
                   onChange={(e) => setDepTarget(e.target.value)}
-                  style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                  style={{
+                    width: '100%',
+                    padding: '8px 10px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border)',
+                  }}
                 >
                   <option value="">Select callee service...</option>
                   {services.map((s) => (
@@ -703,21 +881,35 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Timeout (ms)</label>
+                  <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                    Timeout (ms)
+                  </label>
                   <input
                     type="number"
                     min="1"
                     value={depTimeout}
                     onChange={(e) => setDepTimeout(Number(e.target.value))}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      border: '1px solid var(--color-border)',
+                    }}
                   />
                 </div>
                 <div>
-                  <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>Criticality</label>
+                  <label style={{ display: 'block', fontSize: 12, marginBottom: 4 }}>
+                    Criticality
+                  </label>
                   <select
                     value={depCriticality}
                     onChange={(e) => setDepCriticality(e.target.value)}
-                    style={{ width: '100%', padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)' }}
+                    style={{
+                      width: '100%',
+                      padding: '8px 10px',
+                      borderRadius: 6,
+                      border: '1px solid var(--color-border)',
+                    }}
                   >
                     <option value="REQUIRED">Required</option>
                     <option value="OPTIONAL">Optional</option>
@@ -730,13 +922,25 @@ export default function WorldDetailPage({ params }: { params: Promise<{ worldId:
                 <button
                   type="button"
                   onClick={() => setIsAddDepOpen(false)}
-                  style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid var(--color-border)', fontSize: 13 }}
+                  style={{
+                    padding: '8px 14px',
+                    borderRadius: 6,
+                    border: '1px solid var(--color-border)',
+                    fontSize: 13,
+                  }}
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  style={{ padding: '8px 16px', borderRadius: 6, backgroundColor: 'var(--color-primary)', color: '#FFFFFF', fontSize: 13, fontWeight: 500 }}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 6,
+                    backgroundColor: 'var(--color-primary)',
+                    color: '#FFFFFF',
+                    fontSize: 13,
+                    fontWeight: 500,
+                  }}
                 >
                   Add Edge
                 </button>

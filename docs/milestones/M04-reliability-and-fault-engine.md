@@ -11,6 +11,7 @@ MIRRORGRID exists to study, measure, and tame these phenomena. To do that credib
 mechanisms (Circuit Breaker, Retry Policy with Budget, Bulkhead, Deadline Propagation, Token Bucket)
 cannot be ad-hoc heuristics scattered through business logic. They must be mathematically rigorous,
 formally state-modeled, and architected so that the exact same reliability logic operates in both:
+
 1. The deterministic logical runtime (`packages/sim` running under virtual clock).
 2. The real containerized runtime (`apps/synthetic-service` running in Docker under wall clock).
 
@@ -32,6 +33,7 @@ damage real infrastructure, or run indefinitely after an abort signal.
 ## 3. Scope
 
 ### In scope
+
 - `packages/reliability`: Core mathematical state machines and admission controllers with zero runtime
   dependencies (`CircuitBreaker`, `RetryPolicy`, `RetryBudget`, `Bulkhead`, `DeadlineContext`, `TokenBucket`).
 - Core / Shell architecture: pure state machines decoupled from time sources via the `Clock` port.
@@ -45,6 +47,7 @@ damage real infrastructure, or run indefinitely after an abort signal.
 - UI: Circuit Breaker visualizer screen, Fault injection control console, Chaos safety status bar.
 
 ### Explicitly out of scope
+
 - Toxiproxy container-level traffic interception (M03 — container runtime connects to this fault engine).
 - Full multi-phase experiment orchestration with phases and baselines (M05 — experiment engine).
 - Automated root-cause analysis and SLO burn rate calculations for SLA reports (M10).
@@ -110,6 +113,7 @@ The Circuit Breaker models three states: `CLOSED`, `OPEN`, and `HALF_OPEN`.
 ```
 
 Key nuances enforced:
+
 - **Failure Counting:** Sliding window of fixed time buckets (e.g. 10 buckets of 1 second). Transitions
   do not evaluate until a minimum volume threshold (`volumeThreshold`, e.g. 20 requests) is reached,
   preventing a single failure during low traffic from tripping the breaker.
@@ -125,20 +129,24 @@ Naive retries create catastrophic positive feedback loops: if a downstream servi
 callers timeout and retry, doubling or tripling load when downstream capacity has already collapsed.
 
 MIRRORGRID implements **Retry Budgets** per RFC / Linkerd specification:
+
 - Every successful request adds token fraction to the budget (e.g. 0.2 retries earned per success).
 - Every retry consumes 1 full token.
 - Max retries ratio is strictly capped (e.g. max 10% of total traffic can be retries).
 - If the budget is exhausted, further retries are rejected immediately, and the original error is returned.
 
 Backoff formula: **Decorrelated Jitter** or **Full Jitter** (Amazon Builder's Library):
+
 ```
 sleep = min(capMicros, random_between(0, baseMicros * (2 ^ attempt)))
 ```
+
 All random choices consume from a deterministic PRNG substream (`rng.stream('retry:edge:<edgeId>')`).
 
 ### Bulkhead admission control
 
 The Bulkhead protects service capacity by partitioning resources:
+
 - Max concurrent active calls (`maxConcurrent`).
 - Bounded wait queue (`maxQueueCapacity`) with queue timeout (`queueTimeoutMicros`).
 - When both active slots and queue are full, request is shed immediately with `AppError.rateLimited('BULKHEAD_FULL')`.
@@ -148,6 +156,7 @@ The Bulkhead protects service capacity by partitioning resources:
 
 Deadlines are absolute integer microsecond timestamps representing the wall-clock or virtual-clock time
 at which the client will give up waiting:
+
 - In HTTP: header `mg-deadline-at: <micros>`.
 - In gRPC: metadata key `mg-deadline-at`.
 - Before making an outbound RPC or taking work off a queue:
@@ -162,6 +171,7 @@ at which the client will give up waiting:
 ### Chaos Safety Boundary
 
 Chaos engineering without automated guard rails is reckless. MIRRORGRID includes a strict safety boundary:
+
 1. **Global Emergency Abort (`/api/v1/worlds/:worldId/chaos/abort`):** Immediately resets all active faults,
    unfreezes all injected latencies, closes or resets breakers to normal, and drops all drop rules.
 2. **Blast Radius Cap:** Maximum percentage of edges concurrently degraded (default 30% of edges in a world).
@@ -260,6 +270,7 @@ CREATE INDEX idx_cb_transitions_timeline ON circuit_breaker_transitions(world_id
 ```
 
 ### Index rationale
+
 - `idx_fault_spec_world` and `idx_exp_faults_world_status`: Fault lookup and filtering by world status is in
   the critical loop for experiment execution.
 - `uq_breaker_world_service_edge`: Enforces exactly one live tracking record per edge/service per world.
@@ -336,12 +347,12 @@ export type CircuitState = 'CLOSED' | 'OPEN' | 'HALF_OPEN';
 
 export interface CircuitBreakerConfig {
   readonly failureRateThresholdPpm: number; // e.g. 500,000 = 50%
-  readonly volumeThreshold: number;         // minimum requests before evaluation
-  readonly sleepWindowMicros: bigint;       // wait time in OPEN before HALF_OPEN
-  readonly halfOpenMaxConcurrent: number;   // allowed trial requests in HALF_OPEN
+  readonly volumeThreshold: number; // minimum requests before evaluation
+  readonly sleepWindowMicros: bigint; // wait time in OPEN before HALF_OPEN
+  readonly halfOpenMaxConcurrent: number; // allowed trial requests in HALF_OPEN
   readonly consecutiveSuccessThreshold: number; // required to re-close circuit
-  readonly windowBucketCount: number;       // e.g. 10 buckets
-  readonly bucketDurationMicros: bigint;    // e.g. 1_000_000n (1 second)
+  readonly windowBucketCount: number; // e.g. 10 buckets
+  readonly bucketDurationMicros: bigint; // e.g. 1_000_000n (1 second)
 }
 
 export type AdmissionResult =
@@ -381,22 +392,25 @@ export interface CircuitBreakerCore {
 // packages/reliability/src/core/retry-policy.ts
 
 export interface RetryBudgetConfig {
-  readonly ttlMicros: bigint;               // rolling window duration
-  readonly minRetriesPerSec: number;        // baseline minimum allowance
-  readonly retryRatio: number;              // e.g. 0.10 for max 10% retries
+  readonly ttlMicros: bigint; // rolling window duration
+  readonly minRetriesPerSec: number; // baseline minimum allowance
+  readonly retryRatio: number; // e.g. 0.10 for max 10% retries
 }
 
 export interface RetryPolicyConfig {
-  readonly maxAttempts: number;            // e.g. 3
-  readonly baseBackoffMicros: bigint;       // e.g. 50_000n (50ms)
-  readonly maxBackoffMicros: bigint;        // e.g. 2_000_000n (2s)
+  readonly maxAttempts: number; // e.g. 3
+  readonly baseBackoffMicros: bigint; // e.g. 50_000n (50ms)
+  readonly maxBackoffMicros: bigint; // e.g. 2_000_000n (2s)
   readonly backoffJitter: 'FULL' | 'DECORRELATED' | 'NONE';
   readonly retryableStatusCodes: ReadonlySet<number>; // e.g. [502, 503, 504]
   readonly budget?: RetryBudgetConfig;
 }
 
 export type RetryDecision =
-  | { readonly shouldRetry: false; readonly reason: 'MAX_ATTEMPTS' | 'NOT_RETRYABLE' | 'BUDGET_EXHAUSTED' | 'DEADLINE_EXCEEDED' }
+  | {
+      readonly shouldRetry: false;
+      readonly reason: 'MAX_ATTEMPTS' | 'NOT_RETRYABLE' | 'BUDGET_EXHAUSTED' | 'DEADLINE_EXCEEDED';
+    }
   | { readonly shouldRetry: true; readonly backoffMicros: bigint };
 
 export interface RetryBudgetCore {
@@ -451,7 +465,11 @@ export interface FaultSpec {
 }
 
 export interface ChaosSafetyBoundary {
-  evaluateSafety(worldId: string, currentErrorRatePpm: number, nowMicros: bigint): {
+  evaluateSafety(
+    worldId: string,
+    currentErrorRatePpm: number,
+    nowMicros: bigint,
+  ): {
     readonly safe: boolean;
     readonly abortTriggered: boolean;
     readonly reason?: string;
@@ -467,43 +485,60 @@ export interface ChaosSafetyBoundary {
 All routes registered under `/api/v1/worlds/:worldId` in `apps/control`.
 
 ### 1. Create Fault Specification
+
 - `POST /api/v1/worlds/:worldId/faults`
 - **Request Body (zod schema):**
   ```typescript
   export const createFaultSpecSchema = z.object({
     name: z.string().min(1).max(120),
     description: z.string().optional(),
-    faultType: z.enum(['LATENCY', 'ERROR', 'PACKET_DROP', 'JITTER', 'BLACKHOLE', 'BANDWIDTH_LIMIT', 'CORRUPT_PAYLOAD', 'SERVICE_KILL']),
+    faultType: z.enum([
+      'LATENCY',
+      'ERROR',
+      'PACKET_DROP',
+      'JITTER',
+      'BLACKHOLE',
+      'BANDWIDTH_LIMIT',
+      'CORRUPT_PAYLOAD',
+      'SERVICE_KILL',
+    ]),
     targetServiceId: z.string().uuid().optional(),
     targetEdgeId: z.string().uuid().optional(),
     parameters: z.record(z.unknown()),
-    safetyRules: z.object({
-      maxDurationMicros: z.number().int().positive().default(300_000_000), // 5 min
-      autoAbortOnBurnRate: z.boolean().default(true),
-    }).default({}),
+    safetyRules: z
+      .object({
+        maxDurationMicros: z.number().int().positive().default(300_000_000), // 5 min
+        autoAbortOnBurnRate: z.boolean().default(true),
+      })
+      .default({}),
   });
   ```
 - **Response:** `201 Created` with created fault object.
 
 ### 2. List Faults for World
+
 - `GET /api/v1/worlds/:worldId/faults`
 - **Query Params:** `status?: string`, `targetServiceId?: string`
 - **Response:** `200 OK` with `{ data: FaultSpec[] }`.
 
 ### 3. Inject / Trigger Fault
+
 - `POST /api/v1/worlds/:worldId/faults/:faultId/inject`
 - **Request Body:** `{ durationMicros: number }`
 - **Response:** `200 OK` with `{ executionId: string, status: 'ACTIVE', startMicros: string }`.
 
 ### 4. Disarm / Stop Fault
+
 - `POST /api/v1/worlds/:worldId/faults/:faultId/disarm`
 - **Response:** `200 OK` with `{ status: 'ABORTED', endMicros: string }`.
 
 ### 5. Get Circuit Breakers
+
 - `GET /api/v1/worlds/:worldId/breakers`
 - **Response:** `200 OK` with list of breaker states across all edges.
 
 ### 6. Emergency Chaos Abort
+
 - `POST /api/v1/worlds/:worldId/chaos/abort`
 - **Request Body:** `{ reason: string }`
 - **Response:** `200 OK` with `{ abortedFaultCount: number, resetBreakerCount: number }`.
@@ -513,6 +548,7 @@ All routes registered under `/api/v1/worlds/:worldId` in `apps/control`.
 ## 9. UI
 
 ### 1. Circuit Breaker Inspector (`apps/web/src/app/worlds/[worldId]/breakers/page.tsx`)
+
 - **Spec alignment:** §52 (Reliability Controls), §64 (Circuit Breaker Visualizer).
 - **Layout:**
   - Header: World name, active breakers summary badge count (`N CLOSED`, `N OPEN`, `N HALF_OPEN`).
@@ -522,6 +558,7 @@ All routes registered under `/api/v1/worlds/:worldId` in `apps/control`.
   - Sliding window telemetry graph: Failure rate vs time over the last 60 seconds.
 
 ### 2. Fault Injection Console (`apps/web/src/app/worlds/[worldId]/faults/page.tsx`)
+
 - **Spec alignment:** §53 (Chaos Engineering Console), §54 (Safety Interlocks).
 - **Layout:**
   - Top Banner: **GLOBAL EMERGENCY CHAOS ABORT** button (Prominent red alert styling).
@@ -564,6 +601,7 @@ All routes registered under `/api/v1/worlds/:worldId` in `apps/control`.
 ## 11. Testing
 
 ### Unit tests (`packages/reliability/tests/unit`)
+
 - `circuit-breaker.test.ts`:
   - Assert CLOSED -> OPEN when failure rate exceeds threshold after volume threshold.
   - Assert OPEN rejects calls without advancing downstream counters.
@@ -582,6 +620,7 @@ All routes registered under `/api/v1/worlds/:worldId` in `apps/control`.
   - Assert blast radius limit blocks new fault injection when cap is reached.
 
 ### Integration tests (`apps/control/tests/integration/faults`)
+
 - Test CRUD operations on `/api/v1/worlds/:worldId/faults`.
 - Test fault injection and immediate disarm lifecycle.
 - Test emergency chaos abort resets all active faults and records audit event.

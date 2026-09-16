@@ -30,7 +30,13 @@ export class AuthService {
     });
 
     const orgName = input.organizationName || `${input.displayName}'s Team`;
-    const orgSlug = orgName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') + '-' + randomBytes(3).toString('hex');
+    const orgSlug =
+      orgName
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') +
+      '-' +
+      randomBytes(3).toString('hex');
 
     const org = await this.repo.createOrganization({
       name: orgName,
@@ -64,7 +70,7 @@ export class AuthService {
     // Generate 32-byte cryptographically secure session token
     const plaintextToken = randomBytes(32).toString('hex');
     const tokenHash = this.hashToken(plaintextToken);
-    
+
     // 7 days expiration
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 

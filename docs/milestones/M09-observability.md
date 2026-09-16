@@ -9,6 +9,7 @@ latency, how the thread pool queue grew, the exact microsecond the circuit break
 the subsequent requests were shed.
 
 MIRRORGRID unifies the **Three Pillars of Observability**:
+
 1. **High-Precision Structured Metrics:** Prometheus-compatible `/metrics` exporter tracking request rates,
    error distributions, active concurrency, and HDR-histogram latency percentiles (P50, P90, P99, P99.9).
 2. **Distributed Tracing (W3C Trace Context):** OpenTelemetry integration propagating `traceparent`
@@ -35,6 +36,7 @@ infrastructure** in lightweight `--profile core` mode.
 ## 3. Scope
 
 ### In scope
+
 - `packages/observability`: Core OpenTelemetry SDK setup, W3C trace context injector/extractor,
   Prometheus metric registry, and Pino logger correlation bindings using Node.js `AsyncLocalStorage`.
 - Fastify plugin exposing standard Prometheus `/metrics` endpoint with process, HTTP, and domain metrics.
@@ -46,6 +48,7 @@ infrastructure** in lightweight `--profile core` mode.
 - Automated gate script `npm run verify:observability`: 5 assertions certifying the telemetry pipeline.
 
 ### Explicitly out of scope
+
 - Continuous profiling agents (e.g. Parca, Pyroscope).
 - Third-party SaaS APM integrations (Datadog, New Relic).
 - eBPF kernel network probe instrumentation.
@@ -101,6 +104,7 @@ To ensure the repository has zero friction on developer laptops where Docker or 
 |   -> Jaeger / Collector   |             |   -> trace_spans table    |
 +---------------------------+             +---------------------------+
 ```
+
 The Web UI queries `/api/v1/worlds/:worldId/traces/:traceId`, which reads directly from Postgres.
 If Jaeger is running, operators can also use the native Jaeger UI; if not, the system is 100% self-contained.
 
@@ -108,6 +112,7 @@ If Jaeger is running, operators can also use the native Jaeger UI; if not, the s
 
 Standard Prometheus client summaries suffer from high memory consumption or loss of tail precision.
 MIRRORGRID implements exponential bucket histograms:
+
 - Explicit boundaries: `[1ms, 5ms, 10ms, 25ms, 50ms, 100ms, 250ms, 500ms, 1000ms, 2500ms, 5000ms, 10000ms]`.
 - Separate label dimensions for `world_id`, `service_id`, `edge_id`, and `status_code`.
 - Strict anti-cardinality rules: user IDs, email addresses, and dynamic query params are **never** included
@@ -116,6 +121,7 @@ MIRRORGRID implements exponential bucket histograms:
 ### Trace Waterfall Visualizer Algorithm
 
 When spans are ingested, they arrive out-of-order. The visualizer reconstructs the tree:
+
 1. Identify the root span (where `parent_span_id IS NULL`).
 2. Build child arrays by matching `parent_span_id == span_id`.
 3. Calculate relative start offsets:
@@ -178,6 +184,7 @@ CREATE INDEX idx_metrics_query ON metrics_snapshots(world_id, service_id, metric
 ```
 
 ### Index rationale
+
 - `idx_spans_trace`: Assembles the full distributed trace waterfall in a single, perfectly indexed query.
 - `idx_spans_error`: Partial index enabling instantaneous filtering of all failed traces in a world.
 
@@ -299,20 +306,24 @@ export interface MetricRegistry {
 ## 8. API
 
 ### 1. Prometheus Scrape Endpoint
+
 - `GET /metrics`
 - **Response:** `200 OK` (`text/plain; version=0.0.4; charset=utf-8`)
 - Conforms to Prometheus openmetrics specification.
 
 ### 2. Query Traces for World
+
 - `GET /api/v1/worlds/:worldId/traces`
 - **Query Params:** `minDurationMs=100&hasError=true&serviceName=orders&limit=25`
 - **Response:** `200 OK` with `{ data: TraceSummary[] }`.
 
 ### 3. Get Trace Waterfall Detail
+
 - `GET /api/v1/worlds/:worldId/traces/:traceId`
 - **Response:** `200 OK` with full `TraceDetail` tree including offsets and critical path flags.
 
 ### 4. Query Correlated Logs for Span
+
 - `GET /api/v1/worlds/:worldId/traces/:traceId/spans/:spanId/logs`
 - **Response:** `200 OK` with array of JSON log lines matching the trace and span IDs.
 
@@ -321,6 +332,7 @@ export interface MetricRegistry {
 ## 9. UI
 
 ### 1. Distributed Trace Waterfall Visualizer (`apps/web/src/app/worlds/[worldId]/traces/[traceId]/page.tsx`)
+
 - **Spec alignment:** §65 (Distributed Trace Waterfall Viewer).
 - **Layout:**
   - **Trace Overview Banner:**
@@ -340,6 +352,7 @@ export interface MetricRegistry {
       - **"Correlated Logs" Tab:** Embedded terminal showing container logs emitted during that span's exact window.
 
 ### 2. Metrics Explorer (`apps/web/src/app/worlds/[worldId]/metrics/page.tsx`)
+
 - **Spec alignment:** §66 (Prometheus Metrics & SLI Dashboard).
 - **Layout:**
   - Time range selector (`Last 5m`, `15m`, `1h`, `Custom`).
@@ -367,11 +380,13 @@ export interface MetricRegistry {
 ## 11. Testing
 
 ### Unit tests (`packages/observability/tests/unit`)
+
 - `w3c.test.ts`: Verify strict parsing of standard W3C `traceparent` headers and generation of valid child headers.
 - `histogram.test.ts`: Verify HDR histogram percentiles (P50, P99) under simulated sample distributions.
 - `waterfall-builder.test.ts`: Reconstruct a 10-span tree from shuffled arrays and assert tree hierarchy and critical path.
 
 ### Integration tests (`apps/control/tests/integration/observability`)
+
 - `trace-propagation.test.ts`:
   - Send HTTP request through Gateway -> Service A -> Service B.
   - Assert all 3 services record spans sharing identical `traceId` with proper parent-child relationships in Postgres.
@@ -394,16 +409,25 @@ The gate test validates these 5 observability assertions:
 assert(traceSpansChainVerified, 'Assertion 1: Traceparent propagated cleanly across all 4 hops');
 
 // Assertion 2: GET /metrics complies strictly with Prometheus exposition format
-assert(prometheusFormatValid, 'Assertion 2: Prometheus /metrics format passes strict syntax validation');
+assert(
+  prometheusFormatValid,
+  'Assertion 2: Prometheus /metrics format passes strict syntax validation',
+);
 
 // Assertion 3: Structured logs correlate 100% with trace_id and span_id
 assert(logsCorrelatedToSpan, 'Assertion 3: Log lines contain matching traceId and spanId');
 
 // Assertion 4: Waterfall tree accurately identifies the critical path and latency offset
-assert(waterfallCriticalPathCalculated, 'Assertion 4: Trace waterfall accurately calculates critical path');
+assert(
+  waterfallCriticalPathCalculated,
+  'Assertion 4: Trace waterfall accurately calculates critical path',
+);
 
 // Assertion 5: Standalone Postgres span store operates without external Jaeger
-assert(standaloneTracingFunctional, 'Assertion 5: Complete trace visualizer operates from Postgres store');
+assert(
+  standaloneTracingFunctional,
+  'Assertion 5: Complete trace visualizer operates from Postgres store',
+);
 ```
 
 ---
@@ -415,7 +439,7 @@ assert(standaloneTracingFunctional, 'Assertion 5: Complete trace visualizer oper
 2. **Context loss across `setTimeout` or EventEmitter:** Node's `AsyncLocalStorage` can lose context if
    custom event emitters or third-party libraries do not maintain async hooks. Wrap asynchronous boundaries.
 3. **Clock skew across Docker containers:** If containers have desynchronized system clocks, child spans
-   can appear to start *before* their parent spans. Use monotonic duration offsets calculated from relative start.
+   can appear to start _before_ their parent spans. Use monotonic duration offsets calculated from relative start.
 4. **Synchronous span writes blocking business traffic:** Spans must be buffered in memory and flushed
    asynchronously in batches. Never perform a synchronous DB insert in the critical path of an RPC.
 

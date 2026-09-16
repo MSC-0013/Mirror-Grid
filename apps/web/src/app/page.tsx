@@ -44,9 +44,22 @@ export default function DashboardPage() {
       </div>
 
       {/* 4 Stat Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+          gap: 16,
+        }}
+      >
         <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
             <span style={{ fontSize: 13, fontWeight: 500 }}>Total Worlds</span>
             <Globe size={18} />
           </div>
@@ -59,37 +72,56 @@ export default function DashboardPage() {
         </div>
 
         <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
             <span style={{ fontSize: 13, fontWeight: 500 }}>Active Experiments</span>
             <FlaskConical size={18} />
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 12 }}>
-            0
-          </div>
+          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 12 }}>0</div>
           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 4 }}>
             Running scenarios
           </div>
         </div>
 
         <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
             <span style={{ fontSize: 13, fontWeight: 500 }}>Events Today</span>
             <Radio size={18} />
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 12 }}>
-            0
-          </div>
+          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 12 }}>0</div>
           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 4 }}>
             Recorded transitions
           </div>
         </div>
 
         <div className="card">
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: 'var(--color-text-secondary)' }}>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              color: 'var(--color-text-secondary)',
+            }}
+          >
             <span style={{ fontSize: 13, fontWeight: 500 }}>Runtime Health</span>
             <Activity size={18} />
           </div>
-          <div style={{ fontSize: 28, fontWeight: 700, marginTop: 12, color: 'var(--color-success)' }}>
+          <div
+            style={{ fontSize: 28, fontWeight: 700, marginTop: 12, color: 'var(--color-success)' }}
+          >
             100%
           </div>
           <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', marginTop: 4 }}>
@@ -100,25 +132,42 @@ export default function DashboardPage() {
 
       {/* Recent Worlds */}
       <div className="card" style={{ marginTop: 8 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            marginBottom: 16,
+          }}
+        >
           <h2 style={{ fontSize: 16, fontWeight: 600 }}>Recent Worlds</h2>
-          <Link href="/worlds" className="btn btn-outline" style={{ fontSize: 12, padding: '4px 10px' }}>
+          <Link
+            href="/worlds"
+            className="btn btn-outline"
+            style={{ fontSize: 12, padding: '4px 10px' }}
+          >
             <span>View All</span>
             <ArrowRight size={14} />
           </Link>
         </div>
 
         {worlds.length === 0 ? (
-          <div style={{ padding: '32px 0', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
+          <div
+            style={{ padding: '32px 0', textAlign: 'center', color: 'var(--color-text-secondary)' }}
+          >
             <p>No worlds created yet.</p>
-            <Link href="/worlds" className="btn btn-primary" style={{ marginTop: 12, display: 'inline-flex' }}>
+            <Link
+              href="/worlds"
+              className="btn btn-primary"
+              style={{ marginTop: 12, display: 'inline-flex' }}
+            >
               <Plus size={16} />
               <span>Create First World</span>
             </Link>
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-            {worlds.map(w => (
+            {worlds.map((w) => (
               <div
                 key={w.id}
                 style={{

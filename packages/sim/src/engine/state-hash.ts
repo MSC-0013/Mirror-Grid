@@ -45,7 +45,7 @@ export interface DivergenceReport {
  */
 export function compareStateHashes(
   expected: StateHashResult,
-  actual: StateHashResult
+  actual: StateHashResult,
 ): DivergenceReport {
   if (expected.root === actual.root) {
     return {
