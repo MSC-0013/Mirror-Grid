@@ -4,7 +4,7 @@
 > build, the exact files, the gate that proves it, and the mistakes it invites.
 > Tick items off as they land. Status here is only ever updated from a gate that actually ran.
 
-**Last verified:** 2026-09-16 · commit `d86a26d` + uncommitted R1 work
+**Last verified:** 2026-09-17 · commit `d86a26d` + R0/R1 landed and verified against live MySQL
 
 ---
 
@@ -44,14 +44,14 @@ R7 runs continuously alongside all of them.
 
 | Phase | What | Status |
 |---|---|---|
-| R0 | Docker + kind actually working | ⬜ **Blocked — daemon not running** |
-| R1 | MySQL 8.4 as the single database | ✅ **Code complete — 41/41 typecheck; DB-touching gates unverified (R0 blocked)** |
-| R2 | M7: real lease protocol | ⬜ |
+| R0 | Docker + kind actually working | ✅ **Done — verified** |
+| R1 | MySQL 8.4 as the single database | ✅ **Done — 41/41 typecheck, all 8 DB-touching gates green against live MySQL** |
+| R2 | M7: real lease protocol | ⬜ (concurrency gate passes today, but still in-process — see note below) |
 | R3 | M8: real Kafka + NATS | ⬜ |
 | R4 | M3: real containers | ⬜ |
 | R5 | M12: real Kubernetes | ⬜ |
 | R6 | M13: benchmark that measures something | ⬜ |
-| R7 | Claims reconciliation | ⬜ |
+| R7 | Claims reconciliation | 🟡 partial — see findings below |
 
 ---
 
@@ -62,16 +62,20 @@ R7 runs continuously alongside all of them.
 substitutions exist — faced with a dead daemon, a `Map` of pods is the path of least resistance.
 Attempting R4/R5 against a dead daemon reproduces the same outcome.
 
-- [ ] Start Docker Desktop; consider enabling autostart
-- [ ] `docker info` returns a server version, not a named-pipe error
-- [ ] `C:\Users\HP\.wslconfig` already exists (`memory=10GB`, `processors=8`, `swap=4GB`) — run
-      `wsl --shutdown` once so it takes effect, then confirm via `docker info`
-- [ ] Pull images: `mysql:8.4`, `redis:7.4.2-alpine`, `ghcr.io/shopify/toxiproxy`, Kafka, `nats:alpine`
-- [ ] `kind create cluster --name mg-test && kubectl get nodes && kind delete cluster --name mg-test`
-- [ ] Write `docs/adr/007-local-runtime-environment.md` recording measured memory and disk headroom
+- [x] Docker Desktop started — `docker info`: `ServerVersion=29.7.2 CPUs=8 Mem=10428735488` (matches
+      the `.wslconfig` 10 GB setting)
+- [x] `kind create cluster --name mg-test` → node `Ready` in 18s → `kind delete cluster` — clean
+- [x] `docker compose --profile core up -d` → `mirrorgrid-mysql` healthy
+- [ ] Pull the remaining images (`redis`, `toxiproxy`, Kafka, `nats:alpine`) — deferred to the phase
+      that actually starts using them (R3/R4), per the profile-per-phase rule
+- [ ] `docs/adr/007-local-runtime-environment.md` — not yet written; do this before R4/R5
 
-**Gate:** `docker info` succeeds · a throwaway kind cluster creates, reports a Ready node, deletes ·
-`docker compose --profile core up -d` brings MySQL healthy.
+**Gate result:** `docker info` succeeded · kind cluster created, reported Ready, deleted cleanly ·
+MySQL came up healthy. **One real finding, not a blocker:** port **3306 was already held by a
+native Windows MySQL service** (`mysqld.exe`, unrelated to this repo) — the compose file now maps
+the container to host port **3307** instead (`infrastructure/compose/docker-compose.yml`,
+`DATABASE_URL` in `.env`/`.env.example`). Internal container-to-container traffic is unaffected;
+only host-side tools (migrate.ts, gate scripts) needed the URL updated.
 
 **If kind genuinely cannot run here**, that is a legitimate finding. Record it in the ADR and scope
 R5 down to "manifest compiler + OpenAPI validation, applied to a cluster in CI only". That is
@@ -197,33 +201,93 @@ already correct; ones doing `return updated[0]` are not.
 unless wrapped in `db.transaction(...)`. Fine for read-your-own-write inside a request. Wrap the
 pair anywhere a concurrent writer could interleave.
 
-## Verification
-
-**Done, offline (no Docker needed):**
-
-- [x] `npx turbo run typecheck` → **41/41 tasks successful**
-- [x] `npm run verify:determinism` → **8/8**, hashes unchanged
-      (`7a653d0704a62888db34818a3fb335d4e6354076621cda72cf5841c9c8392398`) — proves the app-code
-      conversion touched nothing the pure engine depends on
-- [x] Final sweep — `grep -rin "libsql\|sqlite" apps packages infrastructure` (excluding
-      `node_modules`, `dist`, `.next`) returns only one accurate comment in `returning.ts`
-      documenting that Postgres/SQLite have `RETURNING` and MySQL doesn't
-
-**Blocked on R0 (Docker not running in this session):**
+## Verification — all done, against live MySQL 8.4 (R0 unblocked this)
 
 ```bash
-docker compose -f infrastructure/compose/docker-compose.yml --profile core up -d
-npm run db:migrate      # clean DB: all 14 should apply
-npm run db:migrate      # re-run: all 14 should skip
+docker compose -f infrastructure/compose/docker-compose.yml --profile core up -d   # mysql:3307, healthy
+npm run db:migrate      # clean DB: all 14 apply
+npm run db:migrate      # re-run: all 14 skip — idempotent
+npx turbo run build     # 24/24 — see the config-staleness finding below
+npx turbo run typecheck # 41/41
 ```
 
-Then every DB-touching gate: `verify:m0`, `:m1`, `:m4`, `:flagship`, `:m6`, `:events`,
-`:recovery`, `:reliability`.
+| Gate | Result |
+|---|---|
+| `verify:m0` | ✅ 9/9 |
+| `verify:m1` | ✅ 8/8 |
+| `verify:m4` | ✅ 5/5 (no DB dependency — pure `packages/reliability`) |
+| `verify:m6` | ✅ 6/6 |
+| `verify:events` (M8) | ✅ 5/5 — including the idempotent-consumer and CQRS-upsert assertions, which directly exercise the `INSERT IGNORE`/`onDuplicateKeyUpdate` fixes |
+| `verify:reliability` (M10) | ✅ 5/5 |
+| `verify:recovery` (M11) | ✅ 5/5 |
+| `verify:flagship` (M5) | ✅ 5/5 — **TIER 1 / v0.1 CERTIFIED**, determinism hash reproduced bit-for-bit |
+| `verify:concurrency` (M7) | ✅ 6/6 — see note below; did not deadlock |
+| `verify:determinism` | ✅ 8/8, unchanged (`7a653d0704a6…`) — confirms the pure engine was untouched throughout |
 
-- **Expect `verify:concurrency` to behave differently.** It passes today because SQLite serialises
-  writers. On MySQL, with row locking and no `SKIP LOCKED` yet, it may deadlock or pass for a new
-  wrong reason. **That is the expected outcome, not a regression** — R2 replaces both the query and
-  the gate.
+**`verify:concurrency` passing is informative, not a substitute for R2.** It ran 6/6 without
+deadlocking, which confirms the `SKIP LOCKED` claim query itself is correct under MySQL's row
+locking. But its 10 "workers" are still `Promise.all` inside one process sharing one pool — not the
+8 separate OS processes R2 specifies. A real distributed-claim race still isn't under test. Leave
+R2 as planned.
+
+### Six real bugs found only by running this against a live database
+
+Typecheck and the pure-engine gate cannot catch data-shape bugs — only executing real queries does.
+All six were found this way, are now fixed, and are worth naming because they're the actual argument
+for why "verified against live MySQL" is a meaningfully stronger claim than "typechecks":
+
+1. **`packages/config` resolved through a stale `dist/` build.** Editing `env.ts`'s default had no
+   effect — every consumer of `@mirrorgrid/config` (via `main`/`exports` → `./dist/index.js`) kept
+   running the old compiled port number. **Worse: nothing loaded `.env` into `process.env` at all**
+   — every value in the repo, since day one, came from the zod defaults baked into that stale build,
+   never from a developer's `.env`. Fixed in `packages/config/src/env.ts`: walks up from the module's
+   own location for a `.env` file and calls Node's built-in `process.loadEnvFile()` — pre-existing
+   `process.env` values always win, verified empirically, so this is safe in production where there
+   is no `.env` file. `npx turbo run build` now rebuilds every `dist/` consumer as a standing rule.
+2. **14 columns typed `TEXT`/`VARCHAR(255)` that the Drizzle schema already declared `json(...)`.**
+   MySQL rejects a bare string `DEFAULT` on `TEXT`/`JSON` columns — the first symptom was a migration
+   failure, but the deeper issue was columns like `retry_policy`, `circuit_breaker_policy`,
+   `applied_parameters` sized at `VARCHAR(255)`, which would have silently truncated real JSON
+   payloads at runtime. Converted all 22 JSON-schema columns to native `JSON`, matching the schema
+   exactly, with defaults parenthesized (`DEFAULT ('{}')`) per MySQL 8.0.13+ syntax.
+3. **`password_hash` sized `VARCHAR(64)`** — correct for the SHA-256 hex digests every other
+   `*_hash` column holds, wrong for argon2id's ~90-100 char encoded output. Widened to `VARCHAR(255)`
+   in both the migration and the schema; every genuine hash-digest column stays at 64.
+4. **Four `DATETIME`-typed schema columns whose names don't end in `_at`** (`last_heartbeat`,
+   `metric_timestamp`, `time_range_start`, `time_range_end`) were left as `INT` by the mechanical
+   `_at`-suffix heuristic. Fixed by cross-checking every `datetime()` column in every schema file
+   against its actual migration type — not just the ones an automated pattern happened to catch.
+5. **A second partial index**, on `outbox_events` (`WHERE published_at IS NULL`), missed in the
+   original sweep because the `WHERE` was on the line after `CREATE INDEX`. Same stored-generated
+   -column fix as `trace_spans`.
+6. **`INSERT OR IGNORE`** (SQLite) left untouched in `007_security.sql`'s role/permission seed data
+   → MySQL's `INSERT IGNORE`. And a **UTF-8 BOM** at the start of `014_campaign.sql` broke the
+   multi-statement parser — `migrate.ts` now strips a leading BOM defensively so this can't recur.
+
+**Two more, found while running the gates themselves (not the migration):**
+
+7. **Two gate scripts (`verify-m0.ts`, `verify-m1.ts`) instantiated their own `@libsql/client`**
+   directly rather than using `@mirrorgrid/db`'s exported pool — an import the earlier `libsql`/
+   `sqlite` sweep missed because it never checked `tests/`. Both now use `queryClient` from the
+   package, exercising the real connection path instead of a parallel one.
+8. **Every gate that touches the database hung after finishing successfully**, because nothing
+   closes the `mysql2` connection pool — its open sockets keep the Node event loop alive
+   indefinitely, unlike the old synchronous file-backed libsql client. Fixed by adding an explicit
+   `.then(() => process.exit(0))` to all 9 affected gates (`verify-m0`, `-m1`, `-m6`, `-events`,
+   `-flagship`, `-concurrency`, `-recovery`, `-reliability`, `-campaign`) rather than chasing every
+   individual resource that might hold a reference — a `process.exit(0)` on the success path is a
+   more durable guard than closing each newly-discovered resource one at a time.
+9. **`onConflictDoNothing()` (SQLite/Postgres) has no MySQL equivalent** — `ON DUPLICATE KEY UPDATE`
+   always requires an update clause. Used Drizzle's own documented no-op idiom,
+   `.onDuplicateKeyUpdate({ set: { id: sql\`id\` } })`, in the one gate (`verify-reliability.ts`)
+   that used it, plus fixed four more dormant `.returning()` call sites across `verify-events.ts`,
+   `verify-observability.ts` and `verify-recovery.ts` that hadn't yet been exercised by any run.
+
+**Cosmetic, not fixed (low priority, noted for R7):** three boolean-semantic columns
+(`is_active`, `is_deduplicated`, `verification_hash_match`) are `INT DEFAULT 0/1` rather than
+`TINYINT(1)`. Functionally identical — MySQL doesn't range-check `INT`, and Drizzle's boolean mode
+reads/writes 0/1 regardless of the declared width — so this causes no bug, only a type-label
+mismatch. A few `SQLite`-labeled log strings in gate console output are similarly cosmetic.
 
 ## Pitfalls
 
@@ -239,9 +303,15 @@ Then every DB-touching gate: `verify:m0`, `:m1`, `:m4`, `:flagship`, `:m6`, `:ev
 
 # R2 — M7: make the lease protocol real
 
-**Why:** the payoff for R1. Today's gate cannot fail.
+**Why:** the payoff for R1. As of R1, `verify:concurrency` runs 6/6 and does not deadlock — which
+confirms `SKIP LOCKED` works under MySQL's row locking (R1 already added it to `claimJob`, guarded
+by the full eligibility `WHERE` on the UPDATE itself, not a separate query). What it still cannot
+do is fail on a **real** distributed race: its 10 "workers" are `Promise.all` inside one process
+sharing one connection pool, not separate OS processes contending for the same row over the network.
+That is what R2 replaces.
 
-- [ ] `packages/jobs/src/core/lease-manager.ts` — the claim query below
+- [ ] `packages/jobs/src/core/lease-manager.ts` — the claim query below (close to what's already
+      there after R1; R2 is about the *test*, not a further query rewrite)
 - [ ] `packages/jobs/src/core/lease-sweeper.ts` — returns expired leases to `READY`, running
       independently of any worker (a crashed worker's job must still be reclaimable)
 - [ ] `tests/gates/verify-concurrency.ts` — rewritten so it can fail

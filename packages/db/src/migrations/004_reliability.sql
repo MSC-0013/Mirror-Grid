@@ -9,8 +9,8 @@ CREATE TABLE IF NOT EXISTS fault_specifications (
     fault_type         VARCHAR(255) NOT NULL,
     target_service_id  VARCHAR(36) REFERENCES services(id) ON DELETE CASCADE,
     target_edge_id     VARCHAR(36) REFERENCES service_dependencies(id) ON DELETE CASCADE,
-    parameters         VARCHAR(255) NOT NULL DEFAULT '{}',
-    safety_rules       VARCHAR(255) NOT NULL DEFAULT '{"maxDurationMicros": 300000000, "autoAbortOnBurnRate": true}',
+    parameters         JSON NOT NULL DEFAULT ('{}'),
+    safety_rules       JSON NOT NULL DEFAULT ('{"maxDurationMicros": 300000000, "autoAbortOnBurnRate": true}'),
     created_at         DATETIME(3) NOT NULL,
     updated_at         DATETIME(3) NOT NULL,
     CONSTRAINT chk_fault_target CHECK (
@@ -36,7 +36,7 @@ CREATE TABLE IF NOT EXISTS experiment_faults (
     actual_start_micros BIGINT UNSIGNED,
     actual_end_micros  BIGINT UNSIGNED,
     abort_reason       TEXT,
-    applied_parameters VARCHAR(255) NOT NULL,
+    applied_parameters JSON NOT NULL,
     created_at         DATETIME(3) NOT NULL,
     updated_at         DATETIME(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

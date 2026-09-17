@@ -1,7 +1,7 @@
 -- 007_security.sql: Authentication, RBAC, session management, and tamper-evident audit ledger
 
 -- 1. Extend users table with status if not present
-ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'ACTIVE';
+ALTER TABLE users ADD COLUMN status VARCHAR(255) NOT NULL DEFAULT 'ACTIVE';
 
 -- 2. Roles and Permissions tables
 CREATE TABLE IF NOT EXISTS roles (
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     action             VARCHAR(255) NOT NULL,
     resource_type      VARCHAR(255) NOT NULL,
     resource_id        VARCHAR(36) NOT NULL,
-    diff_json          VARCHAR(255) NOT NULL DEFAULT '{}',
+    diff_json          JSON NOT NULL DEFAULT ('{}'),
     client_ip          VARCHAR(255) NOT NULL,
     user_agent         TEXT,
     created_at         DATETIME(3) NOT NULL
@@ -49,12 +49,12 @@ CREATE INDEX idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
 CREATE INDEX idx_audit_logs_created ON audit_logs(created_at DESC);
 
 -- 4. Initial Seed Data
-INSERT OR IGNORE INTO roles (id, description) VALUES
+INSERT IGNORE INTO roles (id, description) VALUES
     ('ADMIN', 'Full administrative access to the platform, security, and audit logs'),
     ('OPERATOR', 'Can create topologies, configure and run experiments, and inject faults'),
     ('VIEWER', 'Read-only access to topologies, live experiments, and metric reports');
 
-INSERT OR IGNORE INTO permissions (id, description) VALUES
+INSERT IGNORE INTO permissions (id, description) VALUES
     ('topology:read', 'View worlds, topologies, services, and edges'),
     ('topology:write', 'Create, update, or delete topologies and service graphs'),
     ('experiments:read', 'View experiment definitions, live metrics, and run history'),
@@ -65,12 +65,12 @@ INSERT OR IGNORE INTO permissions (id, description) VALUES
     ('users:manage', 'Manage user accounts, roles, and session revocations');
 
 -- Viewer role permissions
-INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
     ('VIEWER', 'topology:read'),
     ('VIEWER', 'experiments:read');
 
 -- Operator role permissions
-INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
     ('OPERATOR', 'topology:read'),
     ('OPERATOR', 'topology:write'),
     ('OPERATOR', 'experiments:read'),
@@ -79,7 +79,7 @@ INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES
     ('OPERATOR', 'chaos:abort');
 
 -- Admin role permissions (all 8 permissions)
-INSERT OR IGNORE INTO role_permissions (role_id, permission_id) VALUES
+INSERT IGNORE INTO role_permissions (role_id, permission_id) VALUES
     ('ADMIN', 'topology:read'),
     ('ADMIN', 'topology:write'),
     ('ADMIN', 'experiments:read'),

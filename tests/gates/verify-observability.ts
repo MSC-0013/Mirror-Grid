@@ -14,7 +14,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { runMigrations, db, sql } from '../../packages/db/src/index.js';
+import { runMigrations, db, sql, insertReturning } from '../../packages/db/src/index.js';
 import { traceSpans } from '../../packages/db/src/schema/observability.js';
 import { worlds, organizations, users } from '../../packages/db/src/schema/core.js';
 import {
@@ -72,31 +72,21 @@ async function runGate() {
   // Ensure organization and user exist
   let org = (await db.select().from(organizations).limit(1))[0];
   if (!org) {
-    const orgId = crypto.randomUUID();
-    const [created] = await db
-      .insert(organizations)
-      .values({
-        id: orgId,
-        name: 'Obs Test Org',
-        slug: `obs-test-org-${Date.now()}`,
-      })
-      .returning();
-    org = created;
+    org = await insertReturning(organizations, {
+      id: crypto.randomUUID(),
+      name: 'Obs Test Org',
+      slug: `obs-test-org-${Date.now()}`,
+    });
   }
 
   let user = (await db.select().from(users).limit(1))[0];
   if (!user) {
-    const userId = crypto.randomUUID();
-    const [created] = await db
-      .insert(users)
-      .values({
-        id: userId,
-        email: `obs-test-${Date.now()}@mirrorgrid.local`,
-        passwordHash: 'dummy-hash',
-        displayName: 'Obs Test User',
-      })
-      .returning();
-    user = created;
+    user = await insertReturning(users, {
+      id: crypto.randomUUID(),
+      email: `obs-test-${Date.now()}@mirrorgrid.local`,
+      passwordHash: 'dummy-hash',
+      displayName: 'Obs Test User',
+    });
   }
 
   // Create a dedicated test world

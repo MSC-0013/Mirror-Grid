@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS async_jobs (
     id                 VARCHAR(36) PRIMARY KEY,
     queue_name         VARCHAR(255) NOT NULL DEFAULT 'default',
     job_type           VARCHAR(255) NOT NULL,
-    payload            TEXT NOT NULL DEFAULT '{}',
+    payload            JSON NOT NULL DEFAULT ('{}'),
     status             VARCHAR(255) NOT NULL DEFAULT 'PENDING'
         CHECK (status IN ('PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'DEAD_LETTER', 'CANCELLED')),
     priority           INT NOT NULL DEFAULT 100, -- Lower number = higher priority
@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS dead_letter_queue (
     original_job_id    VARCHAR(36) NOT NULL REFERENCES async_jobs(id) ON DELETE CASCADE,
     queue_name         VARCHAR(255) NOT NULL,
     job_type           VARCHAR(255) NOT NULL,
-    payload            TEXT NOT NULL,
+    payload            JSON NOT NULL,
     failed_reason      TEXT NOT NULL,
     stack_trace        TEXT,
     exhausted_attempts INT NOT NULL,
@@ -41,9 +41,9 @@ CREATE TABLE IF NOT EXISTS worker_nodes (
     id                 VARCHAR(36) PRIMARY KEY,
     hostname           VARCHAR(255) NOT NULL,
     pid                INT NOT NULL,
-    active_queues      TEXT NOT NULL DEFAULT '[]',
+    active_queues      JSON NOT NULL DEFAULT ('[]'),
     concurrency        INT NOT NULL DEFAULT 4,
-    last_heartbeat     INT NOT NULL,
+    last_heartbeat     DATETIME(3) NOT NULL,
     status             VARCHAR(255) NOT NULL DEFAULT 'ALIVE' CHECK (status IN ('ALIVE', 'DRAINING', 'DEAD')),
     started_at         DATETIME(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

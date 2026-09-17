@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS rca_investigations (
     root_cause_service_id VARCHAR(36) REFERENCES services(id) ON DELETE SET NULL,
     confidence_percentage DOUBLE NOT NULL,
     failure_type       VARCHAR(255) NOT NULL CHECK (failure_type IN ('LATENCY_INDUCED_SATURATION', 'RESOURCE_STARVATION', 'POISON_PILL', 'CIRCUIT_TRIP_CASCADE')),
-    causal_chain       TEXT NOT NULL DEFAULT '[]',
-    evidence_summary   TEXT NOT NULL DEFAULT '{}',
+    causal_chain       JSON NOT NULL DEFAULT ('[]'),
+    evidence_summary   JSON NOT NULL DEFAULT ('{}'),
     created_at         DATETIME(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS reliability_reports (
     id                 VARCHAR(36) PRIMARY KEY,
     world_id           VARCHAR(36) NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
     title              VARCHAR(255) NOT NULL,
-    time_range_start   INT NOT NULL,
-    time_range_end     INT NOT NULL,
+    time_range_start   DATETIME(3) NOT NULL,
+    time_range_end     DATETIME(3) NOT NULL,
     overall_score      DOUBLE NOT NULL,
     error_budget_consumed_percent DOUBLE NOT NULL,
     report_markdown    TEXT NOT NULL,

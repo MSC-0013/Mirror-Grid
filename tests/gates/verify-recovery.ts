@@ -21,6 +21,7 @@ import {
   db,
   eq,
   runMigrations,
+  insertReturning,
   worlds,
   organizations,
   users,
@@ -264,29 +265,21 @@ async function runRecoveryGate() {
   // Seed world and services
   let org = (await db.select().from(organizations).limit(1))[0];
   if (!org) {
-    const [cOrg] = await db
-      .insert(organizations)
-      .values({
-        id: crypto.randomUUID(),
-        name: 'DR Org',
-        slug: `dr-org-${Date.now()}`,
-      })
-      .returning();
-    org = cOrg;
+    org = await insertReturning(organizations, {
+      id: crypto.randomUUID(),
+      name: 'DR Org',
+      slug: `dr-org-${Date.now()}`,
+    });
   }
 
   let user = (await db.select().from(users).limit(1))[0];
   if (!user) {
-    const [cUser] = await db
-      .insert(users)
-      .values({
-        id: crypto.randomUUID(),
-        email: `dr-user-${Date.now()}@mirrorgrid.local`,
-        passwordHash: 'dummy',
-        displayName: 'DR User',
-      })
-      .returning();
-    user = cUser;
+    user = await insertReturning(users, {
+      id: crypto.randomUUID(),
+      email: `dr-user-${Date.now()}@mirrorgrid.local`,
+      passwordHash: 'dummy',
+      displayName: 'DR User',
+    });
   }
 
   await db.insert(worlds).values({
@@ -489,7 +482,13 @@ async function runRecoveryGate() {
   console.log('====================================================\n');
 }
 
-runRecoveryGate().catch((err) => {
+runRecoveryGate()
+  // Explicitly exit on success: the mysql2 connection pool keeps open
+  // sockets that hold the Node event loop open indefinitely otherwise,
+  // which is not a failure -- the gate already finished -- but looks
+  // exactly like a hang from the outside.
+  .then(() => process.exit(0))
+  .catch((err) => {
   console.error('\n❌ M11 Recovery Gate Failed:', err);
   process.exit(1);
 });

@@ -32,7 +32,12 @@ services:
       MYSQL_USER: ${MYSQL_USER:-mirrorgrid}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mirrorgrid}
     ports:
-      - "3306:3306"
+      # Host-side 3307, not 3306: this machine already runs a native MySQL service on
+      # 3306. The container's internal port stays 3306 -- other compose services reach
+      # it as `mysql:3306` over the mirrorgrid-net network, unaffected by this mapping.
+      # Only host tools (migrate.ts, gate scripts) connecting via `localhost` need the
+      # DATABASE_URL in .env to say 3307.
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
     mem_limit: 512m

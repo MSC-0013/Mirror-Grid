@@ -9,14 +9,17 @@ CREATE TABLE IF NOT EXISTS outbox_events (
     event_type         VARCHAR(255) NOT NULL,
     partition_key      VARCHAR(255) NOT NULL,
     sequence_num       INT NOT NULL,
-    payload            TEXT NOT NULL DEFAULT '{}',
-    headers            VARCHAR(255) NOT NULL DEFAULT '{}',
+    payload            JSON NOT NULL DEFAULT ('{}'),
+    headers            JSON NOT NULL DEFAULT ('{}'),
     created_at         DATETIME(3) NOT NULL,
-    published_at       DATETIME(3)
+    published_at       DATETIME(3),
+    -- MySQL has no partial indexes. This STORED generated column reproduces the
+    -- Postgres `WHERE published_at IS NULL` predicate as an indexable value, so the
+    -- publisher's poll query (R3) never scans already-published rows.
+    is_unprocessed     TINYINT(1) AS (published_at IS NULL) STORED
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE INDEX idx_outbox_unprocessed ON outbox_events(created_at ASC)
-    WHERE published_at IS NULL;
+CREATE INDEX idx_outbox_unprocessed ON outbox_events(is_unprocessed, created_at ASC);
 CREATE INDEX idx_outbox_world_seq ON outbox_events(world_id, sequence_num ASC);
 
 -- 2. Idempotent Consumer deduplication ledger
@@ -38,7 +41,7 @@ CREATE TABLE IF NOT EXISTS world_activity_feed (
     actor_email        VARCHAR(255),
     severity           VARCHAR(255) NOT NULL DEFAULT 'INFO' CHECK (severity IN ('INFO', 'WARNING', 'CRITICAL')),
     summary            TEXT NOT NULL,
-    details            TEXT NOT NULL DEFAULT '{}',
+    details            JSON NOT NULL DEFAULT ('{}'),
     occurred_at        DATETIME(3) NOT NULL,
     created_at         DATETIME(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -52,8 +55,8 @@ CREATE TABLE IF NOT EXISTS event_store (
     stream_id          VARCHAR(36) NOT NULL,
     stream_version     INT NOT NULL,
     event_type         VARCHAR(255) NOT NULL,
-    payload            TEXT NOT NULL,
-    metadata           TEXT NOT NULL DEFAULT '{}',
+    payload            JSON NOT NULL,
+    metadata           JSON NOT NULL DEFAULT ('{}'),
     occurred_at        DATETIME(3) NOT NULL,
     UNIQUE(stream_id, stream_version)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

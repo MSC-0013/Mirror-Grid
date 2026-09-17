@@ -20,7 +20,7 @@ export const users = mysqlTable('users', {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: varchar('password_hash', { length: 64 }).notNull(),
+  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
   displayName: varchar('display_name', { length: 255 }).notNull(),
   createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
     .notNull()

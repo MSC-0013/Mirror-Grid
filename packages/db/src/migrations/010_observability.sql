@@ -15,8 +15,8 @@ CREATE TABLE IF NOT EXISTS trace_spans (
     duration_micros    INT NOT NULL,
     status_code        VARCHAR(255) NOT NULL DEFAULT 'OK' CHECK (status_code IN ('OK', 'ERROR', 'UNSET')),
     status_message     TEXT,
-    attributes         VARCHAR(255) NOT NULL DEFAULT '{}',
-    events             TEXT NOT NULL DEFAULT '[]',
+    attributes         JSON NOT NULL DEFAULT ('{}'),
+    events             JSON NOT NULL DEFAULT ('[]'),
     created_at         DATETIME(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
@@ -34,9 +34,9 @@ CREATE TABLE IF NOT EXISTS metrics_snapshots (
     id                 VARCHAR(36) PRIMARY KEY,
     world_id           VARCHAR(36) NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
     service_id         VARCHAR(36) REFERENCES services(id) ON DELETE CASCADE,
-    metric_timestamp   INT NOT NULL,
+    metric_timestamp   DATETIME(3) NOT NULL,
     metric_name        VARCHAR(255) NOT NULL,
-    labels             TEXT NOT NULL DEFAULT '{}',
+    labels             JSON NOT NULL DEFAULT ('{}'),
     value_count        INT NOT NULL,
     value_sum          DOUBLE NOT NULL,
     p50_ms             DOUBLE,

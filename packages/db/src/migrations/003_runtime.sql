@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS experiment_runs (
   schema_version     INT NOT NULL DEFAULT 1,
   git_commit         VARCHAR(255),
   lockfile_hash      VARCHAR(64),
-  frozen_config      TEXT NOT NULL,
+  frozen_config      JSON NOT NULL,
   config_hash        VARCHAR(64) NOT NULL,
   final_state_hash   VARCHAR(64),
   status             VARCHAR(255) NOT NULL DEFAULT 'CREATED'
@@ -33,8 +33,8 @@ CREATE TABLE IF NOT EXISTS experiment_metrics (
   queue_depth        INT NOT NULL DEFAULT 0,
   active_slots       INT NOT NULL DEFAULT 0,
   circuit_state      VARCHAR(255) CHECK (circuit_state IS NULL OR circuit_state IN ('CLOSED','OPEN','HALF_OPEN')),
-  latency_samples_us TEXT,
-  latency_histogram  TEXT
+  latency_samples_us JSON,
+  latency_histogram  JSON
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE INDEX experiment_metrics_run_service_time_idx

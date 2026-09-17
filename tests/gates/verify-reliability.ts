@@ -20,7 +20,9 @@ import { fileURLToPath } from 'node:url';
 import {
   db,
   eq,
+  sql,
   runMigrations,
+  insertReturning,
   worlds,
   organizations,
   users,
@@ -332,67 +334,71 @@ async function runReliabilityGate() {
   const testGwServiceId = `svc-gw-${runId}`;
   const testPayServiceId = `svc-pay-${runId}`;
 
-  // Seed world, org, user, and services in SQLite WAL
+  // Seed world, org, user, and services
   let org = (await db.select().from(organizations).limit(1))[0];
   if (!org) {
-    const orgId = crypto.randomUUID();
-    const [created] = await db
-      .insert(organizations)
-      .values({
-        id: orgId,
-        name: 'SRE Test Org',
-        slug: `sre-test-org-${Date.now()}`,
-      })
-      .returning();
-    org = created;
+    org = await insertReturning(organizations, {
+      id: crypto.randomUUID(),
+      name: 'SRE Test Org',
+      slug: `sre-test-org-${Date.now()}`,
+    });
   }
 
   let user = (await db.select().from(users).limit(1))[0];
   if (!user) {
-    const userId = crypto.randomUUID();
-    const [created] = await db
-      .insert(users)
-      .values({
-        id: userId,
-        email: `sre-test-${Date.now()}@mirrorgrid.local`,
-        passwordHash: 'dummy-hash',
-        displayName: 'SRE Test User',
-      })
-      .returning();
-    user = created;
+    user = await insertReturning(users, {
+      id: crypto.randomUUID(),
+      email: `sre-test-${Date.now()}@mirrorgrid.local`,
+      passwordHash: 'dummy-hash',
+      displayName: 'SRE Test User',
+    });
   }
 
-  await db.insert(worlds).values({
-    id: testWorldId,
-    organizationId: org.id,
-    createdBy: user.id,
-    name: `SRE Production Simulation World ${runId}`,
-    status: 'READY',
-  }).onConflictDoNothing();
+  // MySQL's ON DUPLICATE KEY UPDATE always requires an update clause -- there is no
+  // bare "do nothing" form the way onConflictDoNothing() offers on Postgres/SQLite.
+  // Updating the primary key to itself (`set: { id: sql\`id\` }`) is Drizzle's own
+  // documented no-op idiom for mysql-core and reproduces the same behaviour: insert if
+  // absent, silently leave unchanged if the row already exists.
+  await db
+    .insert(worlds)
+    .values({
+      id: testWorldId,
+      organizationId: org.id,
+      createdBy: user.id,
+      name: `SRE Production Simulation World ${runId}`,
+      status: 'READY',
+    })
+    .onDuplicateKeyUpdate({ set: { id: sql`id` } });
 
-  await db.insert(services).values([
-    {
-      id: testGwServiceId,
-      worldId: testWorldId,
-      name: 'api-gateway',
-      serviceType: 'HTTP',
-      status: 'HEALTHY',
-    },
-    {
-      id: testPayServiceId,
-      worldId: testWorldId,
-      name: 'payment-processor',
-      serviceType: 'HTTP',
-      status: 'HEALTHY',
-    },
-  ]).onConflictDoNothing();
+  await db
+    .insert(services)
+    .values([
+      {
+        id: testGwServiceId,
+        worldId: testWorldId,
+        name: 'api-gateway',
+        serviceType: 'HTTP',
+        status: 'HEALTHY',
+      },
+      {
+        id: testPayServiceId,
+        worldId: testWorldId,
+        name: 'payment-processor',
+        serviceType: 'HTTP',
+        status: 'HEALTHY',
+      },
+    ])
+    .onDuplicateKeyUpdate({ set: { id: sql`id` } });
 
-  await db.insert(serviceDependencies).values({
-    worldId: testWorldId,
-    sourceServiceId: testGwServiceId,
-    targetServiceId: testPayServiceId,
-    timeoutMs: 2000,
-  }).onConflictDoNothing();
+  await db
+    .insert(serviceDependencies)
+    .values({
+      worldId: testWorldId,
+      sourceServiceId: testGwServiceId,
+      targetServiceId: testPayServiceId,
+      timeoutMs: 2000,
+    })
+    .onDuplicateKeyUpdate({ set: { id: sql`id` } });
 
   // Obtain admin cookie
   const authEmail = `sre-admin-${Date.now()}@mirrorgrid.io`;
@@ -532,7 +538,13 @@ async function runReliabilityGate() {
   console.log('====================================================\n');
 }
 
-runReliabilityGate().catch((err) => {
+runReliabilityGate()
+  // Explicitly exit on success: the mysql2 connection pool keeps open
+  // sockets that hold the Node event loop open indefinitely otherwise,
+  // which is not a failure -- the gate already finished -- but looks
+  // exactly like a hang from the outside.
+  .then(() => process.exit(0))
+  .catch((err) => {
   console.error('\n❌ M10 Reliability Gate Failed:', err);
   process.exit(1);
 });

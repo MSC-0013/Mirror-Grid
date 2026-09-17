@@ -164,7 +164,13 @@ async function runFlagshipGate() {
   console.log('====================================================');
 }
 
-runFlagshipGate().catch((err) => {
+runFlagshipGate()
+  // Explicitly exit on success: the mysql2 connection pool keeps open
+  // sockets that hold the Node event loop open indefinitely otherwise,
+  // which is not a failure -- the gate already finished -- but looks
+  // exactly like a hang from the outside.
+  .then(() => process.exit(0))
+  .catch((err) => {
   console.error('\nGATE FAILED:', err);
   process.exit(1);
 });

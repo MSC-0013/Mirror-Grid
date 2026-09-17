@@ -16,7 +16,7 @@ import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { fileURLToPath } from 'node:url';
 import { WebSocket } from 'ws';
-import { runMigrations, db, sql } from '../../packages/db/src/index.js';
+import { runMigrations, db, sql, insertReturning } from '../../packages/db/src/index.js';
 import { outboxEvents, worldActivityFeed } from '../../packages/db/src/schema/events.js';
 import { worlds, organizations, users } from '../../packages/db/src/schema/core.js';
 import {
@@ -72,31 +72,21 @@ async function runGate() {
   // Ensure organization and user exist
   let org = (await db.select().from(organizations).limit(1))[0];
   if (!org) {
-    const orgId = crypto.randomUUID();
-    const [created] = await db
-      .insert(organizations)
-      .values({
-        id: orgId,
-        name: 'Event Test Org',
-        slug: `event-test-org-${Date.now()}`,
-      })
-      .returning();
-    org = created;
+    org = await insertReturning(organizations, {
+      id: crypto.randomUUID(),
+      name: 'Event Test Org',
+      slug: `event-test-org-${Date.now()}`,
+    });
   }
 
   let user = (await db.select().from(users).limit(1))[0];
   if (!user) {
-    const userId = crypto.randomUUID();
-    const [created] = await db
-      .insert(users)
-      .values({
-        id: userId,
-        email: `event-test-${Date.now()}@mirrorgrid.local`,
-        passwordHash: 'dummy-hash',
-        displayName: 'Event Test User',
-      })
-      .returning();
-    user = created;
+    user = await insertReturning(users, {
+      id: crypto.randomUUID(),
+      email: `event-test-${Date.now()}@mirrorgrid.local`,
+      passwordHash: 'dummy-hash',
+      displayName: 'Event Test User',
+    });
   }
 
   // Create a dedicated test world
@@ -438,7 +428,13 @@ async function runGate() {
   console.log('====================================================\n');
 }
 
-runGate().catch((err) => {
+runGate()
+  // Explicitly exit on success: the mysql2 connection pool keeps open
+  // sockets that hold the Node event loop open indefinitely otherwise,
+  // which is not a failure -- the gate already finished -- but looks
+  // exactly like a hang from the outside.
+  .then(() => process.exit(0))
+  .catch((err) => {
   console.error('\n❌ Gate verification failed:', err);
   process.exit(1);
 });

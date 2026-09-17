@@ -11,7 +11,7 @@ CREATE TABLE IF NOT EXISTS experiments (
     baseline_duration_micros BIGINT UNSIGNED NOT NULL DEFAULT 30000000,
     fault_duration_micros BIGINT UNSIGNED NOT NULL DEFAULT 30000000,
     cooldown_duration_micros BIGINT UNSIGNED NOT NULL DEFAULT 15000000,
-    frozen_config      TEXT,
+    frozen_config      JSON,
     created_at         DATETIME(3) NOT NULL,
     updated_at         DATETIME(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
@@ -21,12 +21,12 @@ CREATE INDEX idx_experiments_world ON experiments(world_id, status);
 -- 2. Extend experiment_runs for experiment lifecycle execution
 ALTER TABLE experiment_runs ADD COLUMN experiment_id VARCHAR(36);
 ALTER TABLE experiment_runs ADD COLUMN run_number INT NOT NULL DEFAULT 1;
-ALTER TABLE experiment_runs ADD COLUMN current_phase TEXT NOT NULL DEFAULT 'WARMUP';
+ALTER TABLE experiment_runs ADD COLUMN current_phase VARCHAR(255) NOT NULL DEFAULT 'WARMUP';
 ALTER TABLE experiment_runs ADD COLUMN mttd_micros BIGINT UNSIGNED;
 ALTER TABLE experiment_runs ADD COLUMN mttr_micros BIGINT UNSIGNED;
 ALTER TABLE experiment_runs ADD COLUMN peak_error_rate_ppm INT DEFAULT 0;
 ALTER TABLE experiment_runs ADD COLUMN peak_p99_micros BIGINT UNSIGNED DEFAULT 0;
-ALTER TABLE experiment_runs ADD COLUMN result_summary TEXT DEFAULT '{}';
+ALTER TABLE experiment_runs ADD COLUMN result_summary JSON DEFAULT ('{}');
 
 CREATE INDEX idx_exp_runs_experiment ON experiment_runs(experiment_id);
 
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS experiment_events (
     sim_time_micros    BIGINT UNSIGNED NOT NULL,
     event_category     VARCHAR(255) NOT NULL,
     summary            TEXT NOT NULL,
-    details            TEXT DEFAULT '{}',
+    details            JSON DEFAULT ('{}'),
     created_at         DATETIME(3) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 

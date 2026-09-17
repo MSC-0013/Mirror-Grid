@@ -16,8 +16,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createClient } from '@libsql/client';
-import { runMigrations, resolveDatabaseUrl } from '../../packages/db/src/index.js';
+import { runMigrations, queryClient } from '../../packages/db/src/index.js';
 import { buildServer as buildControlServer } from '../../apps/control/src/server.js';
 import { DependencyGraph, reachableFrom } from '@mirrorgrid/domain';
 
@@ -57,15 +56,10 @@ async function runM1Gate() {
   console.log('   MIRRORGRID M1: Domain Model & Topology Gate');
   console.log('====================================================\n');
 
-  const connectionString = process.env.DATABASE_URL || 'file:./data/mirrorgrid.db';
-
   // 1. Check database connectivity and migrations
   console.log('[1/8] Verifying database connectivity & migrations...');
-  const url = resolveDatabaseUrl(connectionString);
-  const client = createClient({ url });
-  await client.execute('SELECT 1');
-  client.close();
-  await runMigrations(connectionString);
+  await queryClient.query('SELECT 1');
+  await runMigrations();
   console.log('✓ SQL database connected and migrations up to date.');
 
   // 2. Boot Control Plane

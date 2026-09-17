@@ -1,4 +1,4 @@
-﻿-- Migration 014: Campaign Runs and Scenario Results
+-- Migration 014: Campaign Runs and Scenario Results
 CREATE TABLE IF NOT EXISTS campaign_runs (
   id                 VARCHAR(36) PRIMARY KEY,
   world_id           VARCHAR(36) NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,

@@ -18,8 +18,7 @@ import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createClient } from '@libsql/client';
-import { runMigrations, resolveDatabaseUrl } from '../../packages/db/src/index.js';
+import { runMigrations, queryClient } from '../../packages/db/src/index.js';
 import { buildServer as buildControlServer } from '../../apps/control/src/server.js';
 import { buildGateway } from '../../apps/gateway/src/server.js';
 
@@ -59,29 +58,26 @@ async function runGate() {
   console.log('   MIRRORGRID M0: Foundation & Walking Skeleton Gate');
   console.log('====================================================\n');
 
-  const connectionString = process.env.DATABASE_URL || 'file:./data/mirrorgrid.db';
-
-  // 1. Check SQL database connectivity
+  // 1. Check SQL database connectivity. Uses the package's own pooled client (same
+  // path apps/control uses in production) rather than a one-off connection, so this
+  // assertion exercises the real connection configuration, not a parallel one.
   console.log('[1/9] Checking SQL database connectivity...');
   try {
-    const url = resolveDatabaseUrl(connectionString);
-    const client = createClient({ url });
-    await client.execute('SELECT 1');
-    client.close();
+    await queryClient.query('SELECT 1');
     console.log('✓ SQL database is reachable and accepting queries.');
   } catch (err) {
-    console.error('✗ Failed to connect to SQL database at ' + connectionString);
+    console.error('✗ Failed to connect to SQL database');
     throw err;
   }
 
   // 2. Run migrations
   console.log('\n[2/9] Executing initial database migrations...');
-  await runMigrations(connectionString);
+  await runMigrations();
   console.log('✓ Initial migrations applied cleanly.');
 
   // 3. Re-run migrations (assert idempotency)
   console.log('\n[3/9] Re-running migrations to assert idempotency...');
-  await runMigrations(connectionString);
+  await runMigrations();
   console.log('✓ Migrations are 100% idempotent.');
 
   // 4. Spin up in-memory Fastify Control & Gateway instances for integration check
@@ -199,7 +195,13 @@ async function runGate() {
   console.log('====================================================');
 }
 
-runGate().catch((err) => {
+runGate()
+  // Explicitly exit on success: the mysql2 connection pool keeps open
+  // sockets that hold the Node event loop open indefinitely otherwise,
+  // which is not a failure -- the gate already finished -- but looks
+  // exactly like a hang from the outside.
+  .then(() => process.exit(0))
+  .catch((err) => {
   console.error('\n✗ GATE VERIFICATION FAILED:\n', err);
   process.exit(1);
 });

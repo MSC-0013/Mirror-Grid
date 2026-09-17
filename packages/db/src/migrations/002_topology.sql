@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS services (
   target_instances   INT NOT NULL DEFAULT 1 CHECK (target_instances >= 1 AND target_instances <= 100),
   concurrency_limit  INT NOT NULL DEFAULT 64 CHECK (concurrency_limit >= 1),
   queue_capacity     INT NOT NULL DEFAULT 1000 CHECK (queue_capacity >= 0),
-  config             TEXT NOT NULL DEFAULT '{}',
+  config             JSON NOT NULL DEFAULT ('{}'),
   created_at         DATETIME(3) NOT NULL,
   updated_at         DATETIME(3) NOT NULL,
   UNIQUE(world_id, name)
@@ -44,8 +44,8 @@ CREATE TABLE IF NOT EXISTS service_dependencies (
   timeout_ms         INT NOT NULL DEFAULT 5000 CHECK (timeout_ms > 0),
   criticality        VARCHAR(255) NOT NULL DEFAULT 'REQUIRED'
                   CHECK (criticality IN ('REQUIRED','OPTIONAL','BEST_EFFORT')),
-  retry_policy       VARCHAR(255) NOT NULL DEFAULT '{"type":"EXPONENTIAL","maxAttempts":3,"baseDelayMs":100,"maxDelayMs":30000,"jitterFactor":0.25,"budgetPercent":20}',
-  circuit_breaker_policy VARCHAR(255) NOT NULL DEFAULT '{"enabled":true,"threshold":5,"windowMs":10000,"cooldownMs":30000,"halfOpenProbes":3}',
+  retry_policy       JSON NOT NULL DEFAULT ('{"type":"EXPONENTIAL","maxAttempts":3,"baseDelayMs":100,"maxDelayMs":30000,"jitterFactor":0.25,"budgetPercent":20}'),
+  circuit_breaker_policy JSON NOT NULL DEFAULT ('{"enabled":true,"threshold":5,"windowMs":10000,"cooldownMs":30000,"halfOpenProbes":3}'),
   created_at         DATETIME(3) NOT NULL,
   updated_at         DATETIME(3) NOT NULL,
   UNIQUE(source_service_id, target_service_id),
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS workloads (
   base_rate          DECIMAL(18,6) NOT NULL CHECK (base_rate >= 0),
   peak_rate          DECIMAL(18,6),
   duration_ms        BIGINT UNSIGNED,
-  config             TEXT NOT NULL DEFAULT '{}',
+  config             JSON NOT NULL DEFAULT ('{}'),
   created_at         DATETIME(3) NOT NULL,
   updated_at         DATETIME(3) NOT NULL,
   UNIQUE(world_id, name)

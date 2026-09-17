@@ -79,7 +79,12 @@ export async function runMigrations(connectionString = config.DATABASE_URL): Pro
       }
 
       console.log(`Applying migration: ${file}...`);
-      const content = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+      // Strip a UTF-8 BOM: some editors save with one, and mysql2's multi-statement
+      // parser treats it as the start of an invalid identifier on the first statement
+      // rather than silently ignoring it (unlike libsql, which tolerated it).
+      const content = fs
+        .readFileSync(path.join(migrationsDir, file), 'utf8')
+        .replace(/^﻿/, '');
 
       // MySQL DDL is not transactional — an ALTER commits implicitly — so a failure
       // mid-file leaves partial state. Record the failing file loudly rather than

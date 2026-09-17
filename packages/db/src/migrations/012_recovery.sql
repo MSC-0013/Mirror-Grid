@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS snapshot_components (
     component_type     VARCHAR(255) NOT NULL CHECK (component_type IN ('SERVICE_STATE', 'CIRCUIT_BREAKER', 'QUEUE_STATE', 'FAULT_STATE')),
     component_id       VARCHAR(36) NOT NULL,
     component_hash     VARCHAR(64) NOT NULL,
-    state_payload      TEXT NOT NULL DEFAULT '{}',
+    state_payload      JSON NOT NULL DEFAULT ('{}'),
     is_deduplicated    INT NOT NULL DEFAULT 0,
     CONSTRAINT uq_snapshot_component UNIQUE (snapshot_id, component_type, component_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
