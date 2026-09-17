@@ -19,14 +19,17 @@ export class IdempotentConsumer {
   ): Promise<ConsumeResult> {
     const now = new Date();
 
-    // In SQLite, perform INSERT OR IGNORE
-    const insertResult = await db.run(sql`
-      INSERT OR IGNORE INTO ${consumedEvents} (event_id, consumer_group, processed_at)
-      VALUES (${event.id}, ${consumerGroup}, ${now.getTime()})
+    // MySQL's INSERT IGNORE relies on the composite PRIMARY KEY (event_id, consumer_group)
+    // to silently no-op on a duplicate rather than error — that primary key is what makes
+    // this dedupe correct, not the IGNORE keyword alone. db.execute() (not db.run(), which
+    // does not exist on the mysql2 driver) returns the raw mysql2 tuple, so affectedRows
+    // is read off the first element.
+    const [insertResult] = await db.execute(sql`
+      INSERT IGNORE INTO ${consumedEvents} (event_id, consumer_group, processed_at)
+      VALUES (${event.id}, ${consumerGroup}, ${now})
     `);
 
-    // Check if a row was actually inserted
-    const wasInserted = (insertResult as { rowsAffected?: number }).rowsAffected === 1;
+    const wasInserted = (insertResult as { affectedRows?: number }).affectedRows === 1;
 
     if (!wasInserted) {
       // Event has already been processed by this consumer group

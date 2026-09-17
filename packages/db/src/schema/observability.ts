@@ -1,45 +1,41 @@
-import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, double, json, datetime, index } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { worlds } from './core.js';
 import { services } from './topology.js';
 
-export const traceSpans = sqliteTable(
+export const traceSpans = mysqlTable(
   'trace_spans',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    traceId: text('trace_id').notNull(),
-    spanId: text('span_id').notNull(),
-    parentSpanId: text('parent_span_id'),
-    serviceId: text('service_id').references(() => services.id, { onDelete: 'set null' }),
-    serviceName: text('service_name').notNull(),
-    operationName: text('operation_name').notNull(),
-    spanKind: text('span_kind', {
-      enum: ['SERVER', 'CLIENT', 'PRODUCER', 'CONSUMER', 'INTERNAL'],
-    })
+    traceId: varchar('trace_id', { length: 36 }).notNull(),
+    spanId: varchar('span_id', { length: 36 }).notNull(),
+    parentSpanId: varchar('parent_span_id', { length: 36 }),
+    serviceId: varchar('service_id', { length: 36 }).references(() => services.id, { onDelete: 'set null' }),
+    serviceName: varchar('service_name', { length: 255 }).notNull(),
+    operationName: varchar('operation_name', { length: 255 }).notNull(),
+    spanKind: varchar('span_kind', { length: 64, enum: ['SERVER', 'CLIENT', 'PRODUCER', 'CONSUMER', 'INTERNAL'] })
       .notNull()
       .default('INTERNAL'),
-    startTimeMicros: integer('start_time_micros').notNull(),
-    durationMicros: integer('duration_micros').notNull(),
-    statusCode: text('status_code', {
-      enum: ['OK', 'ERROR', 'UNSET'],
-    })
+    startTimeMicros: int('start_time_micros').notNull(),
+    durationMicros: int('duration_micros').notNull(),
+    statusCode: varchar('status_code', { length: 64, enum: ['OK', 'ERROR', 'UNSET'] })
       .notNull()
       .default('OK'),
     statusMessage: text('status_message'),
-    attributes: text('attributes', { mode: 'json' })
+    attributes: json('attributes')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    events: text('events', { mode: 'json' })
+    events: json('events')
       .$type<unknown[]>()
       .notNull()
       .$defaultFn(() => []),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -50,28 +46,28 @@ export const traceSpans = sqliteTable(
   ],
 );
 
-export const metricsSnapshots = sqliteTable(
+export const metricsSnapshots = mysqlTable(
   'metrics_snapshots',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    serviceId: text('service_id').references(() => services.id, { onDelete: 'cascade' }),
-    metricTimestamp: integer('metric_timestamp', { mode: 'timestamp_ms' }).notNull(),
-    metricName: text('metric_name').notNull(),
-    labels: text('labels', { mode: 'json' })
+    serviceId: varchar('service_id', { length: 36 }).references(() => services.id, { onDelete: 'cascade' }),
+    metricTimestamp: datetime('metric_timestamp', { mode: 'date', fsp: 3 }).notNull(),
+    metricName: varchar('metric_name', { length: 255 }).notNull(),
+    labels: json('labels')
       .$type<Record<string, string>>()
       .notNull()
       .$defaultFn(() => ({})),
-    valueCount: integer('value_count').notNull(),
-    valueSum: real('value_sum').notNull(),
-    p50Ms: real('p50_ms'),
-    p95Ms: real('p95_ms'),
-    p99Ms: real('p99_ms'),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    valueCount: int('value_count').notNull(),
+    valueSum: double('value_sum').notNull(),
+    p50Ms: double('p50_ms'),
+    p95Ms: double('p95_ms'),
+    p99Ms: double('p99_ms'),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },

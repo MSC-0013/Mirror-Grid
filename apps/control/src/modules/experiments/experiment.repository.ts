@@ -1,22 +1,19 @@
 import { eq, desc, and } from 'drizzle-orm';
-import { db, schema } from '@mirrorgrid/db';
+import { db, schema, insertReturning, updateReturning } from '@mirrorgrid/db';
 import type { CreateExperimentDto } from './experiment.schema.js';
 
 export class ExperimentRepository {
   public async createExperiment(worldId: string, dto: CreateExperimentDto) {
-    const [row] = await db
-      .insert(schema.experiments)
-      .values({
-        worldId,
-        name: dto.name,
-        hypothesis: dto.hypothesis,
-        status: 'DRAFT',
-        version: 1,
-        baselineDurationMicros: BigInt(dto.baselineDurationMicros),
-        faultDurationMicros: BigInt(dto.faultDurationMicros),
-        cooldownDurationMicros: BigInt(dto.cooldownDurationMicros),
-      })
-      .returning();
+    const row = await insertReturning(schema.experiments, {
+      worldId,
+      name: dto.name,
+      hypothesis: dto.hypothesis,
+      status: 'DRAFT',
+      version: 1,
+      baselineDurationMicros: BigInt(dto.baselineDurationMicros),
+      faultDurationMicros: BigInt(dto.faultDurationMicros),
+      cooldownDurationMicros: BigInt(dto.cooldownDurationMicros),
+    });
 
     if (dto.detectors.length > 0) {
       await db.insert(schema.experimentDetectors).values(
@@ -64,16 +61,11 @@ export class ExperimentRepository {
     status: string,
     frozenConfig?: Record<string, unknown>,
   ) {
-    const [row] = await db
-      .update(schema.experiments)
-      .set({
-        status,
-        ...(frozenConfig ? { frozenConfig } : {}),
-        updatedAt: new Date(),
-      })
-      .where(eq(schema.experiments.id, id))
-      .returning();
-    return row;
+    return updateReturning(
+      schema.experiments,
+      { status, ...(frozenConfig ? { frozenConfig } : {}), updatedAt: new Date() },
+      eq(schema.experiments.id, id),
+    );
   }
 
   public async createRun(data: {
@@ -87,24 +79,20 @@ export class ExperimentRepository {
     configHash: string;
     frozenConfig: Record<string, unknown>;
   }) {
-    const [row] = await db
-      .insert(schema.experimentRuns)
-      .values({
-        id: data.id,
-        experimentId: data.experimentId,
-        worldId: data.worldId,
-        runNumber: data.runNumber,
-        runtimeMode: data.runtimeMode,
-        seed: data.seed,
-        engineVersion: data.engineVersion,
-        configHash: data.configHash,
-        frozenConfig: data.frozenConfig,
-        status: 'RUNNING',
-        currentPhase: 'WARMUP',
-        startedAt: new Date(),
-      })
-      .returning();
-    return row;
+    return insertReturning(schema.experimentRuns, {
+      id: data.id,
+      experimentId: data.experimentId,
+      worldId: data.worldId,
+      runNumber: data.runNumber,
+      runtimeMode: data.runtimeMode,
+      seed: data.seed,
+      engineVersion: data.engineVersion,
+      configHash: data.configHash,
+      frozenConfig: data.frozenConfig,
+      status: 'RUNNING',
+      currentPhase: 'WARMUP',
+      startedAt: new Date(),
+    });
   }
 
   public async updateRunCompletion(
@@ -120,9 +108,9 @@ export class ExperimentRepository {
       resultSummary: Record<string, unknown>;
     },
   ) {
-    const [row] = await db
-      .update(schema.experimentRuns)
-      .set({
+    return updateReturning(
+      schema.experimentRuns,
+      {
         status: data.status,
         currentPhase: data.currentPhase,
         finalStateHash: data.stateHash,
@@ -132,10 +120,9 @@ export class ExperimentRepository {
         peakP99Micros: data.peakP99Micros,
         resultSummary: data.resultSummary,
         completedAt: new Date(),
-      })
-      .where(eq(schema.experimentRuns.id, runId))
-      .returning();
-    return row;
+      },
+      eq(schema.experimentRuns.id, runId),
+    );
   }
 
   public async getLatestRun(experimentId: string) {

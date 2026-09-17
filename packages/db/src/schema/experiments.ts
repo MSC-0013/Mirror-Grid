@@ -1,36 +1,36 @@
-import { sqliteTable, text, integer, blob, numeric, index } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, bigint, decimal, json, datetime, index } from 'drizzle-orm/mysql-core';
 import { worlds } from './core.js';
 import { services, serviceDependencies } from './topology.js';
 import { experimentRuns } from './runtime.js';
 
 // 1. Experiments definition table
-export const experiments = sqliteTable(
+export const experiments = mysqlTable(
   'experiments',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
-    hypothesis: text('hypothesis').notNull(),
-    status: text('status').notNull().default('DRAFT'),
-    version: integer('version').notNull().default(1),
-    baselineDurationMicros: blob('baseline_duration_micros', { mode: 'bigint' })
+    name: varchar('name', { length: 255 }).notNull(),
+    hypothesis: varchar('hypothesis', { length: 255 }).notNull(),
+    status: varchar('status', { length: 255 }).notNull().default('DRAFT'),
+    version: int('version').notNull().default(1),
+    baselineDurationMicros: bigint('baseline_duration_micros', { mode: 'bigint', unsigned: true })
       .notNull()
       .default(30000000n),
-    faultDurationMicros: blob('fault_duration_micros', { mode: 'bigint' })
+    faultDurationMicros: bigint('fault_duration_micros', { mode: 'bigint', unsigned: true })
       .notNull()
       .default(30000000n),
-    cooldownDurationMicros: blob('cooldown_duration_micros', { mode: 'bigint' })
+    cooldownDurationMicros: bigint('cooldown_duration_micros', { mode: 'bigint', unsigned: true })
       .notNull()
       .default(15000000n),
-    frozenConfig: text('frozen_config', { mode: 'json' }),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    frozenConfig: json('frozen_config'),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -38,28 +38,28 @@ export const experiments = sqliteTable(
 );
 
 // 2. Anomaly detectors configured for an experiment
-export const experimentDetectors = sqliteTable(
+export const experimentDetectors = mysqlTable(
   'experiment_detectors',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    experimentId: text('experiment_id')
+    experimentId: varchar('experiment_id', { length: 36 })
       .notNull()
       .references(() => experiments.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
-    detectorType: text('detector_type').notNull(),
-    targetServiceId: text('target_service_id').references(() => services.id, {
+    name: varchar('name', { length: 255 }).notNull(),
+    detectorType: varchar('detector_type', { length: 255 }).notNull(),
+    targetServiceId: varchar('target_service_id', { length: 36 }).references(() => services.id, {
       onDelete: 'cascade',
     }),
-    targetEdgeId: text('target_edge_id').references(() => serviceDependencies.id, {
+    targetEdgeId: varchar('target_edge_id', { length: 36 }).references(() => serviceDependencies.id, {
       onDelete: 'cascade',
     }),
-    thresholdValue: numeric('threshold_value').notNull(),
-    windowDurationMicros: blob('window_duration_micros', { mode: 'bigint' })
+    thresholdValue: decimal('threshold_value', { precision: 18, scale: 6 }).notNull(),
+    windowDurationMicros: bigint('window_duration_micros', { mode: 'bigint', unsigned: true })
       .notNull()
       .default(5000000n),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -67,20 +67,20 @@ export const experimentDetectors = sqliteTable(
 );
 
 // 3. Immutable timeline events generated during a run
-export const experimentEvents = sqliteTable(
+export const experimentEvents = mysqlTable(
   'experiment_events',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    runId: text('run_id')
+    runId: varchar('run_id', { length: 36 })
       .notNull()
       .references(() => experimentRuns.id, { onDelete: 'cascade' }),
-    simTimeMicros: blob('sim_time_micros', { mode: 'bigint' }).notNull(),
-    eventCategory: text('event_category').notNull(),
+    simTimeMicros: bigint('sim_time_micros', { mode: 'bigint', unsigned: true }).notNull(),
+    eventCategory: varchar('event_category', { length: 255 }).notNull(),
     summary: text('summary').notNull(),
-    details: text('details', { mode: 'json' }).$defaultFn(() => ({})),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    details: json('details').$defaultFn(() => ({})),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },

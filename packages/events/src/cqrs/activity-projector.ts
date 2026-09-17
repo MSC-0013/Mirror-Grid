@@ -178,7 +178,9 @@ export class ActivityProjector {
       replayedCount++;
     }
 
-    // Update projection checkpoint
+    // Update projection checkpoint. MySQL's upsert infers the conflicting key from
+    // whichever unique constraint collides, so unlike onConflictDoUpdate there is no
+    // `target` to name.
     await db
       .insert(projectionCheckpoints)
       .values({
@@ -186,8 +188,7 @@ export class ActivityProjector {
         lastProcessedSeq: replayedCount,
         updatedAt: new Date(),
       })
-      .onConflictDoUpdate({
-        target: projectionCheckpoints.projectionName,
+      .onDuplicateKeyUpdate({
         set: {
           lastProcessedSeq: replayedCount,
           updatedAt: new Date(),

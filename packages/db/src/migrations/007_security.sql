@@ -5,48 +5,48 @@ ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'ACTIVE';
 
 -- 2. Roles and Permissions tables
 CREATE TABLE IF NOT EXISTS roles (
-    id TEXT PRIMARY KEY,
-    description TEXT NOT NULL
-);
+    id                 VARCHAR(36) PRIMARY KEY,
+    description        TEXT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS permissions (
-    id TEXT PRIMARY KEY,
-    description TEXT NOT NULL
-);
+    id                 VARCHAR(36) PRIMARY KEY,
+    description        TEXT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS role_permissions (
-    role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    permission_id TEXT NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
+    role_id            VARCHAR(36) NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    permission_id      VARCHAR(36) NOT NULL REFERENCES permissions(id) ON DELETE CASCADE,
     PRIMARY KEY (role_id, permission_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 CREATE TABLE IF NOT EXISTS user_roles (
-    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_id TEXT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
+    user_id            VARCHAR(36) NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    role_id            VARCHAR(36) NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
     PRIMARY KEY (user_id, role_id)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 3. Tamper-evident append-only Audit Ledger
 CREATE TABLE IF NOT EXISTS audit_logs (
-    id TEXT PRIMARY KEY,
-    seq_num INTEGER NOT NULL UNIQUE,
-    prev_hash TEXT NOT NULL,
-    record_hash TEXT NOT NULL UNIQUE,
-    user_id TEXT REFERENCES users(id) ON DELETE SET NULL,
-    user_email TEXT NOT NULL,
-    action TEXT NOT NULL,
-    resource_type TEXT NOT NULL,
-    resource_id TEXT NOT NULL,
-    diff_json TEXT NOT NULL DEFAULT '{}',
-    client_ip TEXT NOT NULL,
-    user_agent TEXT,
-    created_at INTEGER NOT NULL
-);
+    id                 VARCHAR(36) PRIMARY KEY,
+    seq_num            INT NOT NULL UNIQUE,
+    prev_hash          VARCHAR(64) NOT NULL,
+    record_hash        VARCHAR(64) NOT NULL UNIQUE,
+    user_id            VARCHAR(36) REFERENCES users(id) ON DELETE SET NULL,
+    user_email         VARCHAR(255) NOT NULL,
+    action             VARCHAR(255) NOT NULL,
+    resource_type      VARCHAR(255) NOT NULL,
+    resource_id        VARCHAR(36) NOT NULL,
+    diff_json          VARCHAR(255) NOT NULL DEFAULT '{}',
+    client_ip          VARCHAR(255) NOT NULL,
+    user_agent         TEXT,
+    created_at         DATETIME(3) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE INDEX IF NOT EXISTS idx_audit_logs_seq ON audit_logs(seq_num ASC);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_user ON audit_logs(user_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
-CREATE INDEX IF NOT EXISTS idx_audit_logs_created ON audit_logs(created_at DESC);
+CREATE INDEX idx_audit_logs_seq ON audit_logs(seq_num ASC);
+CREATE INDEX idx_audit_logs_user ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_resource ON audit_logs(resource_type, resource_id);
+CREATE INDEX idx_audit_logs_created ON audit_logs(created_at DESC);
 
 -- 4. Initial Seed Data
 INSERT OR IGNORE INTO roles (id, description) VALUES

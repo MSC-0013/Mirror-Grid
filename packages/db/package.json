@@ -24,10 +24,10 @@
     "db:migrate": "node --import tsx src/migrate.ts"
   },
   "dependencies": {
-    "@libsql/client": "^0.18.0",
     "@mirrorgrid/config": "*",
     "@mirrorgrid/domain": "*",
-    "drizzle-orm": "0.45.2"
+    "drizzle-orm": "0.45.2",
+    "mysql2": "^3.24.4"
   },
   "devDependencies": {
     "drizzle-kit": "0.30.5",

@@ -1,73 +1,69 @@
-import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, double, boolean, datetime, index } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { worlds } from './core.js';
 
-export const k8sClusters = sqliteTable('k8s_clusters', {
-  id: text('id')
+export const k8sClusters = mysqlTable('k8s_clusters', {
+  id: varchar('id', { length: 36 })
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: text('name').notNull().unique(),
-  apiServerUrl: text('api_server_url').notNull(),
+  name: varchar('name', { length: 255 }).notNull().unique(),
+  apiServerUrl: varchar('api_server_url', { length: 255 }).notNull(),
   kubeconfigContext: text('kubeconfig_context'),
-  clusterVersion: text('cluster_version'),
-  isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-  createdAt: integer('created_at', { mode: 'timestamp_ms' })
+  clusterVersion: varchar('cluster_version', { length: 255 }),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
     .notNull()
     .$defaultFn(() => new Date()),
 });
 
-export const k8sDeployments = sqliteTable(
+export const k8sDeployments = mysqlTable(
   'k8s_deployments',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    clusterId: text('cluster_id')
+    clusterId: varchar('cluster_id', { length: 36 })
       .notNull()
       .references(() => k8sClusters.id, { onDelete: 'cascade' }),
-    namespace: text('namespace').notNull().unique(),
-    status: text('status', {
-      enum: ['PROVISIONING', 'RUNNING', 'DEGRADED', 'TERMINATING', 'TERMINATED'],
-    })
+    namespace: varchar('namespace', { length: 255 }).notNull().unique(),
+    status: varchar('status', { length: 64, enum: ['PROVISIONING', 'RUNNING', 'DEGRADED', 'TERMINATING', 'TERMINATED'] })
       .notNull()
       .default('PROVISIONING'),
-    totalDeployments: integer('total_deployments').notNull().default(0),
-    totalPods: integer('total_pods').notNull().default(0),
-    healthyPods: integer('healthy_pods').notNull().default(0),
-    deployedAt: integer('deployed_at', { mode: 'timestamp_ms' })
+    totalDeployments: int('total_deployments').notNull().default(0),
+    totalPods: int('total_pods').notNull().default(0),
+    healthyPods: int('healthy_pods').notNull().default(0),
+    deployedAt: datetime('deployed_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    terminatedAt: integer('terminated_at', { mode: 'timestamp_ms' }),
+    terminatedAt: datetime('terminated_at', { mode: 'date', fsp: 3 }),
   },
   (table) => [index('idx_k8s_deployments_world').on(table.worldId, table.status)],
 );
 
-export const k8sChaosEvents = sqliteTable(
+export const k8sChaosEvents = mysqlTable(
   'k8s_chaos_events',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    deploymentId: text('deployment_id')
+    deploymentId: varchar('deployment_id', { length: 36 })
       .notNull()
       .references(() => k8sDeployments.id, { onDelete: 'cascade' }),
-    chaosType: text('chaos_type', {
-      enum: ['POD_KILL', 'OOM_KILL', 'ROLLING_UPDATE', 'NODE_CORDON', 'NETWORK_ISOLATION'],
-    }).notNull(),
-    targetServiceName: text('target_service_name').notNull(),
-    targetPodName: text('target_pod_name').notNull(),
-    trafficOfferedRps: integer('traffic_offered_rps').notNull().default(0),
-    requestsSuccessful: integer('requests_successful').notNull().default(0),
-    requestsFailed: integer('requests_failed').notNull().default(0),
-    availabilityPercentage: real('availability_percentage').notNull(),
-    startedAt: integer('started_at', { mode: 'timestamp_ms' })
+    chaosType: varchar('chaos_type', { length: 64, enum: ['POD_KILL', 'OOM_KILL', 'ROLLING_UPDATE', 'NODE_CORDON', 'NETWORK_ISOLATION'] }).notNull(),
+    targetServiceName: varchar('target_service_name', { length: 255 }).notNull(),
+    targetPodName: varchar('target_pod_name', { length: 255 }).notNull(),
+    trafficOfferedRps: int('traffic_offered_rps').notNull().default(0),
+    requestsSuccessful: int('requests_successful').notNull().default(0),
+    requestsFailed: int('requests_failed').notNull().default(0),
+    availabilityPercentage: double('availability_percentage').notNull(),
+    startedAt: datetime('started_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    completedAt: integer('completed_at', { mode: 'timestamp_ms' }),
-    status: text('status').notNull().default('RUNNING'),
+    completedAt: datetime('completed_at', { mode: 'date', fsp: 3 }),
+    status: varchar('status', { length: 255 }).notNull().default('RUNNING'),
   },
   (table) => [index('idx_k8s_chaos_deployment').on(table.deploymentId, table.startedAt)],
 );

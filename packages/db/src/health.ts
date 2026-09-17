@@ -8,12 +8,12 @@ export class DbHealthProbe implements HealthProbe {
   public async check(): Promise<HealthCheckResult> {
     const start = Date.now();
     try {
-      await queryClient.execute('SELECT 1');
+      await queryClient.query('SELECT 1');
       const latencyMs = Date.now() - start;
       return {
         status: latencyMs > 1000 ? 'DEGRADED' : 'HEALTHY',
         latencyMs,
-        message: latencyMs > 1000 ? 'High latency to SQL database' : undefined,
+        message: latencyMs > 1000 ? 'High latency to MySQL' : undefined,
       };
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);

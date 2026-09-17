@@ -1,41 +1,32 @@
-import {
-  sqliteTable,
-  text,
-  integer,
-  blob,
-  numeric,
-  unique,
-  index,
-  check,
-} from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, bigint, decimal, json, datetime, check, index, unique } from 'drizzle-orm/mysql-core';
 import { sql } from 'drizzle-orm';
 import { worlds } from './core.js';
 import type { RetryPolicy, CircuitBreakerPolicy } from '@mirrorgrid/domain';
 
-export const services = sqliteTable(
+export const services = mysqlTable(
   'services',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
-    serviceType: text('service_type').notNull().default('HTTP'),
-    status: text('status').notNull().default('STOPPED'),
-    targetInstances: integer('target_instances').notNull().default(1),
-    concurrencyLimit: integer('concurrency_limit').notNull().default(64),
-    queueCapacity: integer('queue_capacity').notNull().default(1000),
-    config: text('config', { mode: 'json' })
+    serviceType: varchar('service_type', { length: 255 }).notNull().default('HTTP'),
+    status: varchar('status', { length: 255 }).notNull().default('STOPPED'),
+    targetInstances: int('target_instances').notNull().default(1),
+    concurrencyLimit: int('concurrency_limit').notNull().default(64),
+    queueCapacity: int('queue_capacity').notNull().default(1000),
+    config: json('config')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -59,25 +50,25 @@ export const services = sqliteTable(
   ],
 );
 
-export const serviceInstances = sqliteTable(
+export const serviceInstances = mysqlTable(
   'service_instances',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    serviceId: text('service_id')
+    serviceId: varchar('service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    instanceIndex: integer('instance_index').notNull(),
-    status: text('status').notNull().default('STOPPED'),
-    containerId: text('container_id'),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    instanceIndex: int('instance_index').notNull(),
+    status: varchar('status', { length: 255 }).notNull().default('STOPPED'),
+    containerId: varchar('container_id', { length: 36 }),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -90,24 +81,24 @@ export const serviceInstances = sqliteTable(
   ],
 );
 
-export const serviceDependencies = sqliteTable(
+export const serviceDependencies = mysqlTable(
   'service_dependencies',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    sourceServiceId: text('source_service_id')
+    sourceServiceId: varchar('source_service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    targetServiceId: text('target_service_id')
+    targetServiceId: varchar('target_service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    timeoutMs: integer('timeout_ms').notNull().default(5000),
-    criticality: text('criticality').notNull().default('REQUIRED'),
-    retryPolicy: text('retry_policy', { mode: 'json' })
+    timeoutMs: int('timeout_ms').notNull().default(5000),
+    criticality: varchar('criticality', { length: 255 }).notNull().default('REQUIRED'),
+    retryPolicy: json('retry_policy')
       .$type<RetryPolicy>()
       .notNull()
       .$defaultFn(() => ({
@@ -118,7 +109,7 @@ export const serviceDependencies = sqliteTable(
         jitterFactor: 0.25,
         budgetPercent: 20,
       })),
-    circuitBreakerPolicy: text('circuit_breaker_policy', { mode: 'json' })
+    circuitBreakerPolicy: json('circuit_breaker_policy')
       .$type<CircuitBreakerPolicy>()
       .notNull()
       .$defaultFn(() => ({
@@ -128,10 +119,10 @@ export const serviceDependencies = sqliteTable(
         cooldownMs: 30000,
         halfOpenProbes: 3,
       })),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -155,31 +146,31 @@ export const serviceDependencies = sqliteTable(
   ],
 );
 
-export const workloads = sqliteTable(
+export const workloads = mysqlTable(
   'workloads',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
-    targetServiceId: text('target_service_id')
+    name: varchar('name', { length: 255 }).notNull(),
+    targetServiceId: varchar('target_service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    pattern: text('pattern').notNull().default('CONSTANT'),
-    baseRate: numeric('base_rate').notNull(),
-    peakRate: numeric('peak_rate'),
-    durationMs: blob('duration_ms', { mode: 'bigint' }),
-    config: text('config', { mode: 'json' })
+    pattern: varchar('pattern', { length: 255 }).notNull().default('CONSTANT'),
+    baseRate: decimal('base_rate', { precision: 18, scale: 6 }).notNull(),
+    peakRate: decimal('peak_rate', { precision: 18, scale: 6 }),
+    durationMs: bigint('duration_ms', { mode: 'bigint', unsigned: true }),
+    config: json('config')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },

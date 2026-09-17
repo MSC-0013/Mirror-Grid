@@ -1,33 +1,31 @@
-import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, boolean, json, datetime, index, uniqueIndex } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { worlds } from './core.js';
 import { experimentRuns } from './runtime.js';
 
-export const worldSnapshots = sqliteTable(
+export const worldSnapshots = mysqlTable(
   'world_snapshots',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    experimentRunId: text('experiment_run_id').references(() => experimentRuns.id, {
+    experimentRunId: varchar('experiment_run_id', { length: 36 }).references(() => experimentRuns.id, {
       onDelete: 'cascade',
     }),
-    simTimeMicros: integer('sim_time_micros').notNull(),
-    sequenceNum: integer('sequence_num').notNull(),
-    merkleRootHash: text('merkle_root_hash').notNull(),
-    snapshotType: text('snapshot_type', {
-      enum: ['PERIODIC', 'TRIGGERED', 'MANUAL', 'PRE_FAULT'],
-    })
+    simTimeMicros: int('sim_time_micros').notNull(),
+    sequenceNum: int('sequence_num').notNull(),
+    merkleRootHash: varchar('merkle_root_hash', { length: 64 }).notNull(),
+    snapshotType: varchar('snapshot_type', { length: 64, enum: ['PERIODIC', 'TRIGGERED', 'MANUAL', 'PRE_FAULT'] })
       .notNull()
       .default('PERIODIC'),
     triggerReason: text('trigger_reason'),
-    totalComponents: integer('total_components').notNull(),
-    deduplicatedComponents: integer('deduplicated_components').notNull(),
-    sizeBytes: integer('size_bytes').notNull().default(0),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    totalComponents: int('total_components').notNull(),
+    deduplicatedComponents: int('deduplicated_components').notNull(),
+    sizeBytes: int('size_bytes').notNull().default(0),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -37,25 +35,23 @@ export const worldSnapshots = sqliteTable(
   ],
 );
 
-export const snapshotComponents = sqliteTable(
+export const snapshotComponents = mysqlTable(
   'snapshot_components',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    snapshotId: text('snapshot_id')
+    snapshotId: varchar('snapshot_id', { length: 36 })
       .notNull()
       .references(() => worldSnapshots.id, { onDelete: 'cascade' }),
-    componentType: text('component_type', {
-      enum: ['SERVICE_STATE', 'CIRCUIT_BREAKER', 'QUEUE_STATE', 'FAULT_STATE'],
-    }).notNull(),
-    componentId: text('component_id').notNull(),
-    componentHash: text('component_hash').notNull(),
-    statePayload: text('state_payload', { mode: 'json' })
+    componentType: varchar('component_type', { length: 64, enum: ['SERVICE_STATE', 'CIRCUIT_BREAKER', 'QUEUE_STATE', 'FAULT_STATE'] }).notNull(),
+    componentId: varchar('component_id', { length: 36 }).notNull(),
+    componentHash: varchar('component_hash', { length: 64 }).notNull(),
+    statePayload: json('state_payload')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    isDeduplicated: integer('is_deduplicated', { mode: 'boolean' })
+    isDeduplicated: boolean('is_deduplicated')
       .notNull()
       .default(false),
   },
@@ -69,34 +65,32 @@ export const snapshotComponents = sqliteTable(
   ],
 );
 
-export const drRestorations = sqliteTable(
+export const drRestorations = mysqlTable(
   'dr_restorations',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    snapshotId: text('snapshot_id')
+    snapshotId: varchar('snapshot_id', { length: 36 })
       .notNull()
       .references(() => worldSnapshots.id, { onDelete: 'cascade' }),
-    restoreStatus: text('restore_status', {
-      enum: ['IN_PROGRESS', 'COMPLETED', 'FAILED'],
-    })
+    restoreStatus: varchar('restore_status', { length: 64, enum: ['IN_PROGRESS', 'COMPLETED', 'FAILED'] })
       .notNull()
       .default('IN_PROGRESS'),
-    rpoMicros: integer('rpo_micros').notNull(),
-    rtoMs: integer('rto_ms').notNull(),
-    verificationHashMatch: integer('verification_hash_match', { mode: 'boolean' })
+    rpoMicros: int('rpo_micros').notNull(),
+    rtoMs: int('rto_ms').notNull(),
+    verificationHashMatch: boolean('verification_hash_match')
       .notNull()
       .default(false),
     errorMessage: text('error_message'),
-    restoredBy: text('restored_by').notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    restoredBy: varchar('restored_by', { length: 36 }).notNull(),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    completedAt: integer('completed_at', { mode: 'timestamp_ms' }),
+    completedAt: datetime('completed_at', { mode: 'date', fsp: 3 }),
   },
   (table) => [
     index('idx_dr_world').on(table.worldId, table.createdAt),

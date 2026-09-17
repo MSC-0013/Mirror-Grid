@@ -1,64 +1,64 @@
-import { sqliteTable, text, integer, primaryKey, index } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, json, datetime, index, primaryKey } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { users } from './core.js';
 
-export const roles = sqliteTable('roles', {
-  id: text('id').primaryKey(),
+export const roles = mysqlTable('roles', {
+  id: varchar('id', { length: 36 }).primaryKey(),
   description: text('description').notNull(),
 });
 
-export const permissions = sqliteTable('permissions', {
-  id: text('id').primaryKey(),
+export const permissions = mysqlTable('permissions', {
+  id: varchar('id', { length: 36 }).primaryKey(),
   description: text('description').notNull(),
 });
 
-export const rolePermissions = sqliteTable(
+export const rolePermissions = mysqlTable(
   'role_permissions',
   {
-    roleId: text('role_id')
+    roleId: varchar('role_id', { length: 36 })
       .notNull()
       .references(() => roles.id, { onDelete: 'cascade' }),
-    permissionId: text('permission_id')
+    permissionId: varchar('permission_id', { length: 36 })
       .notNull()
       .references(() => permissions.id, { onDelete: 'cascade' }),
   },
   (table) => [primaryKey({ columns: [table.roleId, table.permissionId] })],
 );
 
-export const userRoles = sqliteTable(
+export const userRoles = mysqlTable(
   'user_roles',
   {
-    userId: text('user_id')
+    userId: varchar('user_id', { length: 36 })
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    roleId: text('role_id')
+    roleId: varchar('role_id', { length: 36 })
       .notNull()
       .references(() => roles.id, { onDelete: 'cascade' }),
   },
   (table) => [primaryKey({ columns: [table.userId, table.roleId] })],
 );
 
-export const auditLogs = sqliteTable(
+export const auditLogs = mysqlTable(
   'audit_logs',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    seqNum: integer('seq_num').notNull().unique(),
-    prevHash: text('prev_hash').notNull(),
-    recordHash: text('record_hash').notNull().unique(),
-    userId: text('user_id').references(() => users.id, { onDelete: 'set null' }),
-    userEmail: text('user_email').notNull(),
-    action: text('action').notNull(),
-    resourceType: text('resource_type').notNull(),
-    resourceId: text('resource_id').notNull(),
-    diffJson: text('diff_json', { mode: 'json' })
+    seqNum: int('seq_num').notNull().unique(),
+    prevHash: varchar('prev_hash', { length: 64 }).notNull(),
+    recordHash: varchar('record_hash', { length: 64 }).notNull().unique(),
+    userId: varchar('user_id', { length: 36 }).references(() => users.id, { onDelete: 'set null' }),
+    userEmail: varchar('user_email', { length: 255 }).notNull(),
+    action: varchar('action', { length: 255 }).notNull(),
+    resourceType: varchar('resource_type', { length: 255 }).notNull(),
+    resourceId: varchar('resource_id', { length: 36 }).notNull(),
+    diffJson: json('diff_json')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    clientIp: text('client_ip').notNull(),
+    clientIp: varchar('client_ip', { length: 255 }).notNull(),
     userAgent: text('user_agent'),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },

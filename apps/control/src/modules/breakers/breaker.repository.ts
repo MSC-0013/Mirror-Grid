@@ -1,5 +1,5 @@
-import { eq, and } from 'drizzle-orm';
-import { db, schema } from '@mirrorgrid/db';
+import { eq, and, isNull } from 'drizzle-orm';
+import { db, schema, insertReturning, updateReturning } from '@mirrorgrid/db';
 
 export class BreakerRepository {
   public async findByWorldId(worldId: string) {
@@ -43,7 +43,12 @@ export class BreakerRepository {
     failureRatePpm: number,
     nowMicros: bigint,
   ) {
-    const [row] = await db
+    // Same upsert-and-read-back shape as runtime.repository.ts's container upsert.
+    // Re-selecting on edgeId needs isNull() rather than eq(col, null): eq() emits
+    // `edge_id = NULL`, which SQL evaluates as unknown (never true) rather than as a
+    // match — a bare `=` against NULL would make this read-back silently return nothing
+    // for the world-level (no specific edge) breaker case.
+    await db
       .insert(schema.circuitBreakerStates)
       .values({
         worldId,
@@ -53,35 +58,40 @@ export class BreakerRepository {
         failureRatePpm,
         stateEnteredAtMicros: nowMicros,
       })
-      .onConflictDoUpdate({
-        target: [
-          schema.circuitBreakerStates.worldId,
-          schema.circuitBreakerStates.serviceId,
-          schema.circuitBreakerStates.edgeId,
-        ],
+      .onDuplicateKeyUpdate({
         set: {
           currentState,
           failureRatePpm,
           stateEnteredAtMicros: nowMicros,
           updatedAt: new Date(),
         },
-      })
-      .returning();
+      });
+
+    const [row] = await db
+      .select()
+      .from(schema.circuitBreakerStates)
+      .where(
+        and(
+          eq(schema.circuitBreakerStates.worldId, worldId),
+          eq(schema.circuitBreakerStates.serviceId, serviceId),
+          edgeId ? eq(schema.circuitBreakerStates.edgeId, edgeId) : isNull(schema.circuitBreakerStates.edgeId),
+        ),
+      )
+      .limit(1);
     return row;
   }
 
   public async updateState(id: string, toState: string, nowMicros: bigint, failureRatePpm: number) {
-    const [row] = await db
-      .update(schema.circuitBreakerStates)
-      .set({
+    return updateReturning(
+      schema.circuitBreakerStates,
+      {
         currentState: toState,
         stateEnteredAtMicros: nowMicros,
         failureRatePpm,
         updatedAt: new Date(),
-      })
-      .where(eq(schema.circuitBreakerStates.id, id))
-      .returning();
-    return row;
+      },
+      eq(schema.circuitBreakerStates.id, id),
+    );
   }
 
   public async recordTransition(
@@ -94,20 +104,16 @@ export class BreakerRepository {
     nowMicros: bigint,
     failureRatePpm: number,
   ) {
-    const [row] = await db
-      .insert(schema.circuitBreakerTransitions)
-      .values({
-        worldId,
-        serviceId,
-        edgeId: edgeId ?? undefined,
-        fromState,
-        toState,
-        transitionReason: reason,
-        eventMicros: nowMicros,
-        failureRatePpm,
-      })
-      .returning();
-    return row;
+    return insertReturning(schema.circuitBreakerTransitions, {
+      worldId,
+      serviceId,
+      edgeId: edgeId ?? undefined,
+      fromState,
+      toState,
+      transitionReason: reason,
+      eventMicros: nowMicros,
+      failureRatePpm,
+    });
   }
 
   public async findTransitions(worldId: string, limit = 50) {

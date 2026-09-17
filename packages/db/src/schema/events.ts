@@ -1,33 +1,33 @@
-import { sqliteTable, text, integer, index, primaryKey, unique } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, json, datetime, index, primaryKey, unique } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { worlds } from './core.js';
 
-export const outboxEvents = sqliteTable(
+export const outboxEvents = mysqlTable(
   'outbox_events',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    aggregateType: text('aggregate_type').notNull(),
-    aggregateId: text('aggregate_id').notNull(),
-    eventType: text('event_type').notNull(),
-    partitionKey: text('partition_key').notNull(),
-    sequenceNum: integer('sequence_num').notNull(),
-    payload: text('payload', { mode: 'json' })
+    aggregateType: varchar('aggregate_type', { length: 255 }).notNull(),
+    aggregateId: varchar('aggregate_id', { length: 36 }).notNull(),
+    eventType: varchar('event_type', { length: 255 }).notNull(),
+    partitionKey: varchar('partition_key', { length: 255 }).notNull(),
+    sequenceNum: int('sequence_num').notNull(),
+    payload: json('payload')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    headers: text('headers', { mode: 'json' })
+    headers: json('headers')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    publishedAt: integer('published_at', { mode: 'timestamp_ms' }),
+    publishedAt: datetime('published_at', { mode: 'date', fsp: 3 }),
   },
   (table) => [
     index('idx_outbox_unprocessed').on(table.createdAt),
@@ -35,12 +35,12 @@ export const outboxEvents = sqliteTable(
   ],
 );
 
-export const consumedEvents = sqliteTable(
+export const consumedEvents = mysqlTable(
   'consumed_events',
   {
-    eventId: text('event_id').notNull(),
-    consumerGroup: text('consumer_group').notNull(),
-    processedAt: integer('processed_at', { mode: 'timestamp_ms' })
+    eventId: varchar('event_id', { length: 36 }).notNull(),
+    consumerGroup: varchar('consumer_group', { length: 255 }).notNull(),
+    processedAt: datetime('processed_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -50,52 +50,52 @@ export const consumedEvents = sqliteTable(
   ],
 );
 
-export const worldActivityFeed = sqliteTable(
+export const worldActivityFeed = mysqlTable(
   'world_activity_feed',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    eventId: text('event_id').notNull(),
-    eventType: text('event_type').notNull(),
-    actorEmail: text('actor_email'),
-    severity: text('severity', { enum: ['INFO', 'WARNING', 'CRITICAL'] })
+    eventId: varchar('event_id', { length: 36 }).notNull(),
+    eventType: varchar('event_type', { length: 255 }).notNull(),
+    actorEmail: varchar('actor_email', { length: 255 }),
+    severity: varchar('severity', { length: 64, enum: ['INFO', 'WARNING', 'CRITICAL'] })
       .notNull()
       .default('INFO'),
     summary: text('summary').notNull(),
-    details: text('details', { mode: 'json' })
+    details: json('details')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    occurredAt: integer('occurred_at', { mode: 'timestamp_ms' })
+    occurredAt: datetime('occurred_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('idx_activity_feed_world').on(table.worldId, table.occurredAt)],
 );
 
-export const eventStore = sqliteTable(
+export const eventStore = mysqlTable(
   'event_store',
   {
-    seqNum: integer('seq_num').primaryKey({ autoIncrement: true }),
-    eventId: text('event_id').notNull().unique(),
-    streamId: text('stream_id').notNull(),
-    streamVersion: integer('stream_version').notNull(),
-    eventType: text('event_type').notNull(),
-    payload: text('payload', { mode: 'json' })
+    seqNum: int('seq_num').autoincrement().primaryKey(),
+    eventId: varchar('event_id', { length: 36 }).notNull().unique(),
+    streamId: varchar('stream_id', { length: 36 }).notNull(),
+    streamVersion: int('stream_version').notNull(),
+    eventType: varchar('event_type', { length: 255 }).notNull(),
+    payload: json('payload')
       .$type<Record<string, unknown>>()
       .notNull(),
-    metadata: text('metadata', { mode: 'json' })
+    metadata: json('metadata')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    occurredAt: integer('occurred_at', { mode: 'timestamp_ms' })
+    occurredAt: datetime('occurred_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -105,10 +105,10 @@ export const eventStore = sqliteTable(
   ],
 );
 
-export const projectionCheckpoints = sqliteTable('projection_checkpoints', {
-  projectionName: text('projection_name').primaryKey(),
-  lastProcessedSeq: integer('last_processed_seq').notNull().default(0),
-  updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+export const projectionCheckpoints = mysqlTable('projection_checkpoints', {
+  projectionName: varchar('projection_name', { length: 255 }).primaryKey(),
+  lastProcessedSeq: int('last_processed_seq').notNull().default(0),
+  updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
     .notNull()
     .$defaultFn(() => new Date()),
 });

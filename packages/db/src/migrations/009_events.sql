@@ -2,66 +2,66 @@
 
 -- 1. Transactional Outbox table
 CREATE TABLE IF NOT EXISTS outbox_events (
-    id TEXT PRIMARY KEY,
-    world_id TEXT NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
-    aggregate_type TEXT NOT NULL,
-    aggregate_id TEXT NOT NULL,
-    event_type TEXT NOT NULL,
-    partition_key TEXT NOT NULL,
-    sequence_num INTEGER NOT NULL,
-    payload TEXT NOT NULL DEFAULT '{}',
-    headers TEXT NOT NULL DEFAULT '{}',
-    created_at INTEGER NOT NULL,
-    published_at INTEGER
-);
+    id                 VARCHAR(36) PRIMARY KEY,
+    world_id           VARCHAR(36) NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+    aggregate_type     VARCHAR(255) NOT NULL,
+    aggregate_id       VARCHAR(36) NOT NULL,
+    event_type         VARCHAR(255) NOT NULL,
+    partition_key      VARCHAR(255) NOT NULL,
+    sequence_num       INT NOT NULL,
+    payload            TEXT NOT NULL DEFAULT '{}',
+    headers            VARCHAR(255) NOT NULL DEFAULT '{}',
+    created_at         DATETIME(3) NOT NULL,
+    published_at       DATETIME(3)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE INDEX IF NOT EXISTS idx_outbox_unprocessed ON outbox_events(created_at ASC)
+CREATE INDEX idx_outbox_unprocessed ON outbox_events(created_at ASC)
     WHERE published_at IS NULL;
-CREATE INDEX IF NOT EXISTS idx_outbox_world_seq ON outbox_events(world_id, sequence_num ASC);
+CREATE INDEX idx_outbox_world_seq ON outbox_events(world_id, sequence_num ASC);
 
 -- 2. Idempotent Consumer deduplication ledger
 CREATE TABLE IF NOT EXISTS consumed_events (
-    event_id TEXT NOT NULL,
-    consumer_group TEXT NOT NULL,
-    processed_at INTEGER NOT NULL,
+    event_id           VARCHAR(36) NOT NULL,
+    consumer_group     VARCHAR(255) NOT NULL,
+    processed_at       DATETIME(3) NOT NULL,
     PRIMARY KEY (event_id, consumer_group)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE INDEX IF NOT EXISTS idx_consumed_events_date ON consumed_events(processed_at);
+CREATE INDEX idx_consumed_events_date ON consumed_events(processed_at);
 
 -- 3. CQRS World Activity Feed (Denormalized read projection)
 CREATE TABLE IF NOT EXISTS world_activity_feed (
-    id TEXT PRIMARY KEY,
-    world_id TEXT NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
-    event_id TEXT NOT NULL,
-    event_type TEXT NOT NULL,
-    actor_email TEXT,
-    severity TEXT NOT NULL DEFAULT 'INFO' CHECK (severity IN ('INFO', 'WARNING', 'CRITICAL')),
-    summary TEXT NOT NULL,
-    details TEXT NOT NULL DEFAULT '{}',
-    occurred_at INTEGER NOT NULL,
-    created_at INTEGER NOT NULL
-);
+    id                 VARCHAR(36) PRIMARY KEY,
+    world_id           VARCHAR(36) NOT NULL REFERENCES worlds(id) ON DELETE CASCADE,
+    event_id           VARCHAR(36) NOT NULL,
+    event_type         VARCHAR(255) NOT NULL,
+    actor_email        VARCHAR(255),
+    severity           VARCHAR(255) NOT NULL DEFAULT 'INFO' CHECK (severity IN ('INFO', 'WARNING', 'CRITICAL')),
+    summary            TEXT NOT NULL,
+    details            TEXT NOT NULL DEFAULT '{}',
+    occurred_at        DATETIME(3) NOT NULL,
+    created_at         DATETIME(3) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE INDEX IF NOT EXISTS idx_activity_feed_world ON world_activity_feed(world_id, occurred_at DESC);
+CREATE INDEX idx_activity_feed_world ON world_activity_feed(world_id, occurred_at DESC);
 
 -- 4. Event Store Journal & Projection Checkpoints
 CREATE TABLE IF NOT EXISTS event_store (
-    seq_num INTEGER PRIMARY KEY AUTOINCREMENT,
-    event_id TEXT NOT NULL UNIQUE,
-    stream_id TEXT NOT NULL,
-    stream_version INTEGER NOT NULL,
-    event_type TEXT NOT NULL,
-    payload TEXT NOT NULL,
-    metadata TEXT NOT NULL DEFAULT '{}',
-    occurred_at INTEGER NOT NULL,
+    seq_num            BIGINT AUTO_INCREMENT PRIMARY KEY,
+    event_id           VARCHAR(36) NOT NULL UNIQUE,
+    stream_id          VARCHAR(36) NOT NULL,
+    stream_version     INT NOT NULL,
+    event_type         VARCHAR(255) NOT NULL,
+    payload            TEXT NOT NULL,
+    metadata           TEXT NOT NULL DEFAULT '{}',
+    occurred_at        DATETIME(3) NOT NULL,
     UNIQUE(stream_id, stream_version)
-);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
-CREATE INDEX IF NOT EXISTS idx_event_store_stream ON event_store(stream_id, stream_version ASC);
+CREATE INDEX idx_event_store_stream ON event_store(stream_id, stream_version ASC);
 
 CREATE TABLE IF NOT EXISTS projection_checkpoints (
-    projection_name TEXT PRIMARY KEY,
-    last_processed_seq INTEGER NOT NULL DEFAULT 0,
-    updated_at INTEGER NOT NULL
-);
+    projection_name    VARCHAR(255) PRIMARY KEY,
+    last_processed_seq INT NOT NULL DEFAULT 0,
+    updated_at         DATETIME(3) NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;

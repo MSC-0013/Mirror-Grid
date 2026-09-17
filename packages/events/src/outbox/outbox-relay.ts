@@ -103,7 +103,7 @@ export class OutboxRelay {
       publishedIds.push(row.id);
     }
 
-    // 2. Mark events as published in SQLite
+    // 2. Mark events as published
     if (publishedIds.length > 0) {
       await db
         .update(outboxEvents)

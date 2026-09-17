@@ -1,36 +1,36 @@
-import { sqliteTable, text, integer, blob, unique, index } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, bigint, json, datetime, index, unique } from 'drizzle-orm/mysql-core';
 import { worlds } from './core.js';
 import { services, serviceDependencies } from './topology.js';
 
 // 1. Fault specifications
-export const faultSpecifications = sqliteTable(
+export const faultSpecifications = mysqlTable(
   'fault_specifications',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
     description: text('description'),
-    faultType: text('fault_type').notNull(),
-    targetServiceId: text('target_service_id').references(() => services.id, {
+    faultType: varchar('fault_type', { length: 255 }).notNull(),
+    targetServiceId: varchar('target_service_id', { length: 36 }).references(() => services.id, {
       onDelete: 'cascade',
     }),
-    targetEdgeId: text('target_edge_id').references(() => serviceDependencies.id, {
+    targetEdgeId: varchar('target_edge_id', { length: 36 }).references(() => serviceDependencies.id, {
       onDelete: 'cascade',
     }),
-    parameters: text('parameters', { mode: 'json' })
+    parameters: json('parameters')
       .notNull()
       .$defaultFn(() => ({})),
-    safetyRules: text('safety_rules', { mode: 'json' })
+    safetyRules: json('safety_rules')
       .notNull()
       .$defaultFn(() => ({ maxDurationMicros: 300000000, autoAbortOnBurnRate: true })),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -42,30 +42,30 @@ export const faultSpecifications = sqliteTable(
 );
 
 // 2. Experiment fault executions
-export const experimentFaults = sqliteTable(
+export const experimentFaults = mysqlTable(
   'experiment_faults',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    experimentId: text('experiment_id'),
+    experimentId: varchar('experiment_id', { length: 36 }),
     faultSpecId: text('fault_spec_id')
       .notNull()
       .references(() => faultSpecifications.id, { onDelete: 'cascade' }),
-    status: text('status').notNull().default('SCHEDULED'),
-    scheduledStartMicros: blob('scheduled_start_micros', { mode: 'bigint' }).notNull(),
-    scheduledDurationMicros: blob('scheduled_duration_micros', { mode: 'bigint' }).notNull(),
-    actualStartMicros: blob('actual_start_micros', { mode: 'bigint' }),
-    actualEndMicros: blob('actual_end_micros', { mode: 'bigint' }),
+    status: varchar('status', { length: 255 }).notNull().default('SCHEDULED'),
+    scheduledStartMicros: bigint('scheduled_start_micros', { mode: 'bigint', unsigned: true }).notNull(),
+    scheduledDurationMicros: bigint('scheduled_duration_micros', { mode: 'bigint', unsigned: true }).notNull(),
+    actualStartMicros: bigint('actual_start_micros', { mode: 'bigint', unsigned: true }),
+    actualEndMicros: bigint('actual_end_micros', { mode: 'bigint', unsigned: true }),
     abortReason: text('abort_reason'),
-    appliedParameters: text('applied_parameters', { mode: 'json' }).notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    appliedParameters: json('applied_parameters').notNull(),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -76,29 +76,29 @@ export const experimentFaults = sqliteTable(
 );
 
 // 3. Circuit breaker state snapshots
-export const circuitBreakerStates = sqliteTable(
+export const circuitBreakerStates = mysqlTable(
   'circuit_breaker_states',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    serviceId: text('service_id')
+    serviceId: varchar('service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    edgeId: text('edge_id').references(() => serviceDependencies.id, {
+    edgeId: varchar('edge_id', { length: 36 }).references(() => serviceDependencies.id, {
       onDelete: 'cascade',
     }),
-    currentState: text('current_state').notNull().default('CLOSED'),
-    stateEnteredAtMicros: blob('state_entered_at_micros', { mode: 'bigint' }).notNull().default(0n),
-    failureRatePpm: integer('failure_rate_ppm').notNull().default(0),
-    consecutiveFailures: integer('consecutive_failures').notNull().default(0),
-    consecutiveSuccesses: integer('consecutive_successes').notNull().default(0),
-    totalRequests: blob('total_requests', { mode: 'bigint' }).notNull().default(0n),
-    totalRejections: blob('total_rejections', { mode: 'bigint' }).notNull().default(0n),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    currentState: varchar('current_state', { length: 255 }).notNull().default('CLOSED'),
+    stateEnteredAtMicros: bigint('state_entered_at_micros', { mode: 'bigint', unsigned: true }).notNull().default(0n),
+    failureRatePpm: int('failure_rate_ppm').notNull().default(0),
+    consecutiveFailures: int('consecutive_failures').notNull().default(0),
+    consecutiveSuccesses: int('consecutive_successes').notNull().default(0),
+    totalRequests: bigint('total_requests', { mode: 'bigint', unsigned: true }).notNull().default(0n),
+    totalRejections: bigint('total_rejections', { mode: 'bigint', unsigned: true }).notNull().default(0n),
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -109,27 +109,27 @@ export const circuitBreakerStates = sqliteTable(
 );
 
 // 4. Circuit breaker transition log
-export const circuitBreakerTransitions = sqliteTable(
+export const circuitBreakerTransitions = mysqlTable(
   'circuit_breaker_transitions',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    serviceId: text('service_id')
+    serviceId: varchar('service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    edgeId: text('edge_id').references(() => serviceDependencies.id, {
+    edgeId: varchar('edge_id', { length: 36 }).references(() => serviceDependencies.id, {
       onDelete: 'cascade',
     }),
-    fromState: text('from_state').notNull(),
-    toState: text('to_state').notNull(),
+    fromState: varchar('from_state', { length: 255 }).notNull(),
+    toState: varchar('to_state', { length: 255 }).notNull(),
     transitionReason: text('transition_reason').notNull(),
-    eventMicros: blob('event_micros', { mode: 'bigint' }).notNull(),
-    failureRatePpm: integer('failure_rate_ppm'),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    eventMicros: bigint('event_micros', { mode: 'bigint', unsigned: true }).notNull(),
+    failureRatePpm: int('failure_rate_ppm'),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },

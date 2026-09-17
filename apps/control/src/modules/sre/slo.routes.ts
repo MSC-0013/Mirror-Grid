@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { eq, and } from 'drizzle-orm';
-import { db, serviceSlos, sloBurnEvents, traceSpans } from '@mirrorgrid/db';
+import { db, insertReturning, serviceSlos, sloBurnEvents, traceSpans } from '@mirrorgrid/db';
 import {
   calculateErrorBudgetStatus,
   evaluateSli,
@@ -30,18 +30,15 @@ export async function sloRoutes(fastify: FastifyInstance) {
       const params = req.params as { worldId: string };
       const body = createSloSchema.parse(req.body);
 
-      const [slo] = await db
-        .insert(serviceSlos)
-        .values({
-          worldId: params.worldId,
-          serviceId: body.serviceId,
-          name: body.name,
-          sliType: body.sliType,
-          targetPercentage: body.targetPercentage,
-          windowSeconds: body.windowSeconds,
-          thresholdLatencyMicros: body.thresholdLatencyMicros ?? null,
-        })
-        .returning();
+      const slo = await insertReturning(serviceSlos, {
+        worldId: params.worldId,
+        serviceId: body.serviceId,
+        name: body.name,
+        sliType: body.sliType,
+        targetPercentage: body.targetPercentage,
+        windowSeconds: body.windowSeconds,
+        thresholdLatencyMicros: body.thresholdLatencyMicros ?? null,
+      });
 
       return reply.code(201).send(slo);
     },
@@ -199,17 +196,14 @@ export async function sloRoutes(fastify: FastifyInstance) {
         budgetConsumedPercent: number;
       };
 
-      const [event] = await db
-        .insert(sloBurnEvents)
-        .values({
-          sloId: params.sloId,
-          burnRate: body.burnRate,
-          severity: body.severity,
-          longWindowSeconds: body.longWindowSeconds,
-          shortWindowSeconds: body.shortWindowSeconds,
-          budgetConsumedPercent: body.budgetConsumedPercent,
-        })
-        .returning();
+      const event = await insertReturning(sloBurnEvents, {
+        sloId: params.sloId,
+        burnRate: body.burnRate,
+        severity: body.severity,
+        longWindowSeconds: body.longWindowSeconds,
+        shortWindowSeconds: body.shortWindowSeconds,
+        budgetConsumedPercent: body.budgetConsumedPercent,
+      });
 
       return reply.code(201).send(event);
     },

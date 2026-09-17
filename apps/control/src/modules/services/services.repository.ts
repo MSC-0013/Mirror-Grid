@@ -1,5 +1,5 @@
 import { eq, and, count } from 'drizzle-orm';
-import { db, schema } from '@mirrorgrid/db';
+import { db, schema, updateReturning, deleteReturning } from '@mirrorgrid/db';
 import type { CreateServiceInput, UpdateServiceInput } from './services.schema.js';
 
 export class ServicesRepository {
@@ -48,19 +48,28 @@ export class ServicesRepository {
 
   public async create(worldId: string, input: CreateServiceInput) {
     return db.transaction(async (tx) => {
+      // Written inline against `tx` rather than through insertReturning(): that helper
+      // always reads back via the pool's `db`, which is a DIFFERENT connection than the
+      // transaction. Reading back through the pool here would see nothing (the insert
+      // isn't committed yet) or, worse, would let the service row appear to callers
+      // outside this transaction before the instance rows are written alongside it.
+      const id = crypto.randomUUID();
+      await tx.insert(schema.services).values({
+        id,
+        worldId,
+        name: input.name,
+        description: input.description,
+        serviceType: input.serviceType,
+        targetInstances: input.targetInstances,
+        concurrencyLimit: input.concurrencyLimit,
+        queueCapacity: input.queueCapacity,
+        config: input.config || {},
+      });
       const [service] = await tx
-        .insert(schema.services)
-        .values({
-          worldId,
-          name: input.name,
-          description: input.description,
-          serviceType: input.serviceType,
-          targetInstances: input.targetInstances,
-          concurrencyLimit: input.concurrencyLimit,
-          queueCapacity: input.queueCapacity,
-          config: input.config || {},
-        })
-        .returning();
+        .select()
+        .from(schema.services)
+        .where(eq(schema.services.id, id))
+        .limit(1);
 
       // Automatically create initial service instances
       const instanceRows = [];
@@ -82,25 +91,18 @@ export class ServicesRepository {
   }
 
   public async update(worldId: string, id: string, input: UpdateServiceInput) {
-    const [updated] = await db
-      .update(schema.services)
-      .set({
-        ...input,
-        updatedAt: new Date(),
-      })
-      .where(and(eq(schema.services.worldId, worldId), eq(schema.services.id, id)))
-      .returning();
-
-    return updated || null;
+    return updateReturning(
+      schema.services,
+      { ...input, updatedAt: new Date() },
+      and(eq(schema.services.worldId, worldId), eq(schema.services.id, id)),
+    );
   }
 
   public async delete(worldId: string, id: string) {
-    const [deleted] = await db
-      .delete(schema.services)
-      .where(and(eq(schema.services.worldId, worldId), eq(schema.services.id, id)))
-      .returning();
-
-    return deleted || null;
+    return deleteReturning(
+      schema.services,
+      and(eq(schema.services.worldId, worldId), eq(schema.services.id, id)),
+    );
   }
 
   public async countDependents(serviceId: string): Promise<number> {

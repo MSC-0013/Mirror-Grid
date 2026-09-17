@@ -1,4 +1,4 @@
-import { db } from '@mirrorgrid/db';
+import { db, insertReturning, updateReturning } from '@mirrorgrid/db';
 import {
   experimentRuns,
   experimentMetrics,
@@ -34,8 +34,7 @@ export class SimulationRepository {
   }
 
   async createRun(run: typeof experimentRuns.$inferInsert): Promise<ExperimentRun> {
-    const rows = await db.insert(experimentRuns).values(run).returning();
-    return rows[0];
+    return insertReturning(experimentRuns, run);
   }
 
   async updateRunStatus(
@@ -49,12 +48,7 @@ export class SimulationRepository {
     if (status === 'COMPLETED' || status === 'FAILED' || status === 'CANCELLED')
       values.completedAt = new Date();
 
-    const rows = await db
-      .update(experimentRuns)
-      .set(values)
-      .where(eq(experimentRuns.id, id))
-      .returning();
-    return rows[0];
+    return updateReturning(experimentRuns, values, eq(experimentRuns.id, id));
   }
 
   async getMetrics(

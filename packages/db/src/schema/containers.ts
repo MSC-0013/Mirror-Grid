@@ -1,55 +1,55 @@
-import { sqliteTable, text, integer, numeric, unique, index } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, decimal, boolean, datetime, index, unique } from 'drizzle-orm/mysql-core';
 import { worlds } from './core.js';
 import { services, serviceDependencies } from './topology.js';
 
 // 1. Runtime deployments
-export const runtimeDeployments = sqliteTable(
+export const runtimeDeployments = mysqlTable(
   'runtime_deployments',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    runtimeMode: text('runtime_mode').notNull().default('LOGICAL'),
-    topologyVersion: integer('topology_version').notNull().default(1),
-    status: text('status').notNull().default('PENDING'),
+    runtimeMode: varchar('runtime_mode', { length: 255 }).notNull().default('LOGICAL'),
+    topologyVersion: int('topology_version').notNull().default(1),
+    status: varchar('status', { length: 255 }).notNull().default('PENDING'),
     errorMessage: text('error_message'),
-    deployedAt: integer('deployed_at', { mode: 'timestamp_ms' })
+    deployedAt: datetime('deployed_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    terminatedAt: integer('terminated_at', { mode: 'timestamp_ms' }),
+    terminatedAt: datetime('terminated_at', { mode: 'date', fsp: 3 }),
   },
   (table) => [index('idx_deployments_world').on(table.worldId, table.status)],
 );
 
 // 2. Container instances
-export const containerInstances = sqliteTable(
+export const containerInstances = mysqlTable(
   'container_instances',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    deploymentId: text('deployment_id')
+    deploymentId: varchar('deployment_id', { length: 36 })
       .notNull()
       .references(() => runtimeDeployments.id, { onDelete: 'cascade' }),
-    serviceId: text('service_id')
+    serviceId: varchar('service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    dockerContainerId: text('docker_container_id').notNull(),
-    dockerImage: text('docker_image').notNull(),
-    servicePort: integer('service_port').notNull(),
-    adminPort: integer('admin_port').notNull(),
-    toxiproxyPort: integer('toxiproxy_port'),
-    status: text('status').notNull().default('CREATED'),
-    cpuLimitCores: numeric('cpu_limit_cores').notNull().default('1.0'),
-    memoryLimitMb: integer('memory_limit_mb').notNull().default(256),
-    startedAt: integer('started_at', { mode: 'timestamp_ms' }),
-    stoppedAt: integer('stopped_at', { mode: 'timestamp_ms' }),
+    dockerContainerId: varchar('docker_container_id', { length: 36 }).notNull(),
+    dockerImage: varchar('docker_image', { length: 255 }).notNull(),
+    servicePort: int('service_port').notNull(),
+    adminPort: int('admin_port').notNull(),
+    toxiproxyPort: int('toxiproxy_port'),
+    status: varchar('status', { length: 255 }).notNull().default('CREATED'),
+    cpuLimitCores: decimal('cpu_limit_cores', { precision: 18, scale: 6 }).notNull().default('1.0'),
+    memoryLimitMb: int('memory_limit_mb').notNull().default(256),
+    startedAt: datetime('started_at', { mode: 'date', fsp: 3 }),
+    stoppedAt: datetime('stopped_at', { mode: 'date', fsp: 3 }),
   },
   (table) => [
     unique('uq_service_deployment').on(table.deploymentId, table.serviceId),
@@ -59,23 +59,23 @@ export const containerInstances = sqliteTable(
 );
 
 // 3. Edge proxy routing records
-export const containerEdgeProxies = sqliteTable(
+export const containerEdgeProxies = mysqlTable(
   'container_edge_proxies',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    deploymentId: text('deployment_id')
+    deploymentId: varchar('deployment_id', { length: 36 })
       .notNull()
       .references(() => runtimeDeployments.id, { onDelete: 'cascade' }),
-    edgeId: text('edge_id')
+    edgeId: varchar('edge_id', { length: 36 })
       .notNull()
       .references(() => serviceDependencies.id, { onDelete: 'cascade' }),
-    toxiproxyListenPort: integer('toxiproxy_listen_port').notNull(),
-    targetHost: text('target_host').notNull(),
-    targetPort: integer('target_port').notNull(),
-    isActive: integer('is_active', { mode: 'boolean' }).notNull().default(true),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    toxiproxyListenPort: int('toxiproxy_listen_port').notNull(),
+    targetHost: varchar('target_host', { length: 255 }).notNull(),
+    targetPort: int('target_port').notNull(),
+    isActive: boolean('is_active').notNull().default(true),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },

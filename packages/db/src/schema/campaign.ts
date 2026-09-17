@@ -1,55 +1,51 @@
-﻿import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core';
+﻿import { mysqlTable, varchar, text, int, double, datetime, index } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { worlds } from './core.js';
 
-export const campaignRuns = sqliteTable(
+export const campaignRuns = mysqlTable(
   'campaign_runs',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    totalScenarios: integer('total_scenarios').notNull().default(20),
-    passedScenarios: integer('passed_scenarios').notNull().default(0),
-    failedScenarios: integer('failed_scenarios').notNull().default(0),
-    totalThroughputRps: real('total_throughput_rps').notNull().default(0.0),
-    p99LatencyMs: real('p99_latency_ms').notNull().default(0.0),
-    heapDeltaBytes: integer('heap_delta_bytes').notNull().default(0),
-    status: text('status', {
-      enum: ['RUNNING', 'COMPLETED', 'FAILED'],
-    })
+    totalScenarios: int('total_scenarios').notNull().default(20),
+    passedScenarios: int('passed_scenarios').notNull().default(0),
+    failedScenarios: int('failed_scenarios').notNull().default(0),
+    totalThroughputRps: double('total_throughput_rps').notNull().default(0.0),
+    p99LatencyMs: double('p99_latency_ms').notNull().default(0.0),
+    heapDeltaBytes: int('heap_delta_bytes').notNull().default(0),
+    status: varchar('status', { length: 64, enum: ['RUNNING', 'COMPLETED', 'FAILED'] })
       .notNull()
       .default('RUNNING'),
-    startedAt: integer('started_at', { mode: 'timestamp_ms' })
+    startedAt: datetime('started_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    completedAt: integer('completed_at', { mode: 'timestamp_ms' }),
+    completedAt: datetime('completed_at', { mode: 'date', fsp: 3 }),
   },
   (table) => [index('idx_campaign_runs_world').on(table.worldId, table.status)],
 );
 
-export const campaignScenarios = sqliteTable(
+export const campaignScenarios = mysqlTable(
   'campaign_scenarios',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    campaignId: text('campaign_id')
+    campaignId: varchar('campaign_id', { length: 36 })
       .notNull()
       .references(() => campaignRuns.id, { onDelete: 'cascade' }),
-    scenarioNumber: integer('scenario_number').notNull(),
-    name: text('name').notNull(),
-    category: text('category').notNull(),
-    durationMs: integer('duration_ms').notNull(),
-    requestsOffered: integer('requests_offered').notNull(),
-    requestsSuccessful: integer('requests_successful').notNull(),
-    availabilityPercentage: real('availability_percentage').notNull(),
-    p99Ms: real('p99_ms').notNull(),
-    status: text('status', {
-      enum: ['PASSED', 'FAILED'],
-    }).notNull(),
+    scenarioNumber: int('scenario_number').notNull(),
+    name: varchar('name', { length: 255 }).notNull(),
+    category: varchar('category', { length: 255 }).notNull(),
+    durationMs: int('duration_ms').notNull(),
+    requestsOffered: int('requests_offered').notNull(),
+    requestsSuccessful: int('requests_successful').notNull(),
+    availabilityPercentage: double('availability_percentage').notNull(),
+    p99Ms: double('p99_ms').notNull(),
+    status: varchar('status', { length: 64, enum: ['PASSED', 'FAILED'] }).notNull(),
     detailsJson: text('details_json'),
   },
   (table) => [index('idx_campaign_scenarios_campaign').on(table.campaignId, table.scenarioNumber)],

@@ -1,31 +1,29 @@
-import { sqliteTable, text, integer, real, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, double, json, datetime, index, uniqueIndex } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 import { worlds } from './core.js';
 import { services } from './topology.js';
 
-export const serviceSlos = sqliteTable(
+export const serviceSlos = mysqlTable(
   'service_slos',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    serviceId: text('service_id')
+    serviceId: varchar('service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    name: text('name').notNull(),
-    sliType: text('sli_type', {
-      enum: ['AVAILABILITY', 'LATENCY_P99', 'LATENCY_P95'],
-    }).notNull(),
-    targetPercentage: real('target_percentage').notNull(),
-    windowSeconds: integer('window_seconds').notNull().default(2592000),
-    thresholdLatencyMicros: integer('threshold_latency_micros'),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    name: varchar('name', { length: 255 }).notNull(),
+    sliType: varchar('sli_type', { length: 64, enum: ['AVAILABILITY', 'LATENCY_P99', 'LATENCY_P95'] }).notNull(),
+    targetPercentage: double('target_percentage').notNull(),
+    windowSeconds: int('window_seconds').notNull().default(2592000),
+    thresholdLatencyMicros: int('threshold_latency_micros'),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -35,63 +33,59 @@ export const serviceSlos = sqliteTable(
   ],
 );
 
-export const sloBurnEvents = sqliteTable(
+export const sloBurnEvents = mysqlTable(
   'slo_burn_events',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    sloId: text('slo_id')
+    sloId: varchar('slo_id', { length: 36 })
       .notNull()
       .references(() => serviceSlos.id, { onDelete: 'cascade' }),
-    burnRate: real('burn_rate').notNull(),
-    severity: text('severity', {
-      enum: ['P1_CRITICAL', 'P2_HIGH', 'P3_WARNING'],
-    }).notNull(),
-    longWindowSeconds: integer('long_window_seconds').notNull(),
-    shortWindowSeconds: integer('short_window_seconds').notNull(),
-    budgetConsumedPercent: real('budget_consumed_percent').notNull(),
-    triggeredAt: integer('triggered_at', { mode: 'timestamp_ms' })
+    burnRate: double('burn_rate').notNull(),
+    severity: varchar('severity', { length: 64, enum: ['P1_CRITICAL', 'P2_HIGH', 'P3_WARNING'] }).notNull(),
+    longWindowSeconds: int('long_window_seconds').notNull(),
+    shortWindowSeconds: int('short_window_seconds').notNull(),
+    budgetConsumedPercent: double('budget_consumed_percent').notNull(),
+    triggeredAt: datetime('triggered_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    resolvedAt: integer('resolved_at', { mode: 'timestamp_ms' }),
+    resolvedAt: datetime('resolved_at', { mode: 'date', fsp: 3 }),
   },
   (table) => [
     index('idx_burn_events_slo').on(table.sloId, table.triggeredAt),
   ],
 );
 
-export const rcaInvestigations = sqliteTable(
+export const rcaInvestigations = mysqlTable(
   'rca_investigations',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    experimentRunId: text('experiment_run_id'),
+    experimentRunId: varchar('experiment_run_id', { length: 36 }),
     rootCauseServiceId: text('root_cause_service_id').references(() => services.id, {
       onDelete: 'set null',
     }),
-    confidencePercentage: real('confidence_percentage').notNull(),
-    failureType: text('failure_type', {
-      enum: [
+    confidencePercentage: double('confidence_percentage').notNull(),
+    failureType: varchar('failure_type', { length: 64, enum: [
         'LATENCY_INDUCED_SATURATION',
         'RESOURCE_STARVATION',
         'POISON_PILL',
         'CIRCUIT_TRIP_CASCADE',
-      ],
-    }).notNull(),
-    causalChain: text('causal_chain', { mode: 'json' })
+      ] }).notNull(),
+    causalChain: json('causal_chain')
       .$type<unknown[]>()
       .notNull()
       .$defaultFn(() => []),
-    evidenceSummary: text('evidence_summary', { mode: 'json' })
+    evidenceSummary: json('evidence_summary')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -100,22 +94,22 @@ export const rcaInvestigations = sqliteTable(
   ],
 );
 
-export const reliabilityReports = sqliteTable(
+export const reliabilityReports = mysqlTable(
   'reliability_reports',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    title: text('title').notNull(),
-    timeRangeStart: integer('time_range_start', { mode: 'timestamp_ms' }).notNull(),
-    timeRangeEnd: integer('time_range_end', { mode: 'timestamp_ms' }).notNull(),
-    overallScore: real('overall_score').notNull(),
-    errorBudgetConsumedPercent: real('error_budget_consumed_percent').notNull(),
+    title: varchar('title', { length: 255 }).notNull(),
+    timeRangeStart: datetime('time_range_start', { mode: 'date', fsp: 3 }).notNull(),
+    timeRangeEnd: datetime('time_range_end', { mode: 'date', fsp: 3 }).notNull(),
+    overallScore: double('overall_score').notNull(),
+    errorBudgetConsumedPercent: double('error_budget_consumed_percent').notNull(),
     reportMarkdown: text('report_markdown').notNull(),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },

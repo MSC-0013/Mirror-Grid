@@ -1,6 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { eq, and, gt } from 'drizzle-orm';
-import { db } from '@mirrorgrid/db';
+import { db, insertReturning } from '@mirrorgrid/db';
 import { sessions, users, userRoles, organizationMembers } from '@mirrorgrid/db/schema';
 import { getPermissionsForRoles, type RoleCode, type UserPrincipal } from '../rbac/permissions.js';
 
@@ -49,17 +49,14 @@ export class SessionStore {
     const ttlMs = (options.ttlSeconds ?? 7 * 24 * 60 * 60) * 1000;
     const expiresAt = new Date(Date.now() + ttlMs);
 
-    const [inserted] = await db
-      .insert(sessions)
-      .values({
-        userId: options.userId,
-        tokenHash,
-        expiresAt,
-        ipAddress: options.ipAddress,
-        userAgent: options.userAgent,
-        isActive: true,
-      })
-      .returning();
+    const inserted = await insertReturning(sessions, {
+      userId: options.userId,
+      tokenHash,
+      expiresAt,
+      ipAddress: options.ipAddress,
+      userAgent: options.userAgent,
+      isActive: true,
+    });
 
     const principal = await this.resolvePrincipal(options.userId, inserted.id);
 
@@ -94,7 +91,7 @@ export class SessionStore {
       return cached.principal;
     }
 
-    // 2. Query SQLite
+    // 2. Query the database
     const now = new Date(nowMs);
     const [row] = await db
       .select({
@@ -142,7 +139,7 @@ export class SessionStore {
     // 1. Immediate eviction from hot cache
     this.memoryCache.delete(tokenHash);
 
-    // 2. Mark inactive in SQLite
+    // 2. Mark inactive in the database
     await db.update(sessions).set({ isActive: false }).where(eq(sessions.tokenHash, tokenHash));
   }
 

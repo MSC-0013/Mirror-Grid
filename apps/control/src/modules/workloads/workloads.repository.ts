@@ -1,5 +1,5 @@
 import { eq, and } from 'drizzle-orm';
-import { db, schema } from '@mirrorgrid/db';
+import { db, schema, insertReturning, updateReturning, deleteReturning } from '@mirrorgrid/db';
 import type { CreateWorkloadInput, UpdateWorkloadInput } from './workloads.schema.js';
 
 export class WorkloadsRepository {
@@ -32,21 +32,16 @@ export class WorkloadsRepository {
   }
 
   public async create(worldId: string, input: CreateWorkloadInput) {
-    const [created] = await db
-      .insert(schema.workloads)
-      .values({
-        worldId,
-        name: input.name,
-        targetServiceId: input.targetServiceId,
-        pattern: input.pattern,
-        baseRate: input.baseRate.toString(),
-        peakRate: input.peakRate !== undefined ? input.peakRate.toString() : null,
-        durationMs: input.durationMs !== undefined ? BigInt(input.durationMs) : null,
-        config: input.config || {},
-      })
-      .returning();
-
-    return created;
+    return insertReturning(schema.workloads, {
+      worldId,
+      name: input.name,
+      targetServiceId: input.targetServiceId,
+      pattern: input.pattern,
+      baseRate: input.baseRate.toString(),
+      peakRate: input.peakRate !== undefined ? input.peakRate.toString() : null,
+      durationMs: input.durationMs !== undefined ? BigInt(input.durationMs) : null,
+      config: input.config || {},
+    });
   }
 
   public async update(worldId: string, id: string, input: UpdateWorkloadInput) {
@@ -62,21 +57,17 @@ export class WorkloadsRepository {
     if (input.durationMs !== undefined) updateValues.durationMs = BigInt(input.durationMs);
     if (input.config !== undefined) updateValues.config = input.config;
 
-    const [updated] = await db
-      .update(schema.workloads)
-      .set(updateValues)
-      .where(and(eq(schema.workloads.worldId, worldId), eq(schema.workloads.id, id)))
-      .returning();
-
-    return updated || null;
+    return updateReturning(
+      schema.workloads,
+      updateValues,
+      and(eq(schema.workloads.worldId, worldId), eq(schema.workloads.id, id)),
+    );
   }
 
   public async delete(worldId: string, id: string) {
-    const [deleted] = await db
-      .delete(schema.workloads)
-      .where(and(eq(schema.workloads.worldId, worldId), eq(schema.workloads.id, id)))
-      .returning();
-
-    return deleted || null;
+    return deleteReturning(
+      schema.workloads,
+      and(eq(schema.workloads.worldId, worldId), eq(schema.workloads.id, id)),
+    );
   }
 }

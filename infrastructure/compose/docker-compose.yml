@@ -5,7 +5,7 @@ networks:
     driver: bridge
 
 volumes:
-  postgres_data:
+  mysql_data:
   redis_data:
   kafka_data:
 
@@ -13,26 +13,35 @@ services:
   # =========================================================================
   # Profile: core (Active for M0, M1, M2, M4, M5)
   # =========================================================================
-  postgres:
-    image: postgres:18.6-alpine
-    container_name: mirrorgrid-postgres
+  mysql:
+    image: mysql:8.4
+    container_name: mirrorgrid-mysql
     profiles:
       - core
       - full
+    # MySQL 8.0+ is required for SELECT ... FOR UPDATE SKIP LOCKED, which the job
+    # lease protocol (M7) depends on. SQLite could not express it at all.
+    command:
+      - --innodb-buffer-pool-size=256M
+      - --max-connections=200
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: mirrorgrid
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-mirrorgrid}
+      MYSQL_USER: ${MYSQL_USER:-mirrorgrid}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-mirrorgrid}
     ports:
-      - "5432:5432"
+      - "3306:3306"
     volumes:
-      - postgres_data:/var/lib/postgresql
+      - mysql_data:/var/lib/mysql
+    mem_limit: 512m
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d mirrorgrid"]
-      interval: 2s
-      timeout: 3s
-      retries: 15
-      start_period: 2s
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 3s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
     networks:
       - mirrorgrid-net
 

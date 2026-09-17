@@ -1,5 +1,5 @@
 import { eq, and, or, lte, lt, inArray, asc } from 'drizzle-orm';
-import { db } from '@mirrorgrid/db';
+import { db, insertReturning, updateReturning } from '@mirrorgrid/db';
 import { asyncJobs, deadLetterQueue } from '@mirrorgrid/db/schema';
 import type { JobDefinition, EnqueueOptions, ClaimOptions } from './types.js';
 
@@ -12,18 +12,15 @@ export class LeaseManager {
     options: EnqueueOptions = {},
   ): Promise<JobDefinition> {
     const runAt = new Date(Date.now() + (options.delayMs ?? 0));
-    const [inserted] = await db
-      .insert(asyncJobs)
-      .values({
-        jobType,
-        payload,
-        queueName: options.queueName ?? 'default',
-        priority: options.priority ?? 100,
-        maxAttempts: options.maxAttempts ?? 5,
-        runAt,
-        status: 'PENDING',
-      })
-      .returning();
+    const inserted = await insertReturning(asyncJobs, {
+      jobType,
+      payload,
+      queueName: options.queueName ?? 'default',
+      priority: options.priority ?? 100,
+      maxAttempts: options.maxAttempts ?? 5,
+      runAt,
+      status: 'PENDING',
+    });
 
     return inserted as JobDefinition;
   }
@@ -68,7 +65,14 @@ export class LeaseManager {
         return null;
       }
 
-      const [claimed] = await db
+      // MySQL has no RETURNING, so this cannot use the generic updateReturning() helper:
+      // that helper re-selects the id BEFORE updating and then updates by id alone, which
+      // would drop the (status = PENDING OR lease-expired) guard between the two steps and
+      // reopen the double-claim race this WHERE clause exists to prevent. Instead, the
+      // guard runs on the UPDATE itself and success is read from `affectedRows` — a row
+      // count of 0 means another claimant (or R2's real SKIP LOCKED protocol, once this is
+      // replaced) already took it, and the id is never re-fetched from that stale premise.
+      const [updateResult] = await db
         .update(asyncJobs)
         .set({
           status: 'RUNNING',
@@ -85,8 +89,17 @@ export class LeaseManager {
               and(eq(asyncJobs.status, 'RUNNING'), lt(asyncJobs.leaseExpiresAt, now)),
             ),
           ),
-        )
-        .returning();
+        );
+
+      if (updateResult.affectedRows === 0) {
+        return null;
+      }
+
+      const [claimed] = await db
+        .select()
+        .from(asyncJobs)
+        .where(eq(asyncJobs.id, candidate.id))
+        .limit(1);
 
       return (claimed as JobDefinition) ?? null;
     } finally {
@@ -98,7 +111,9 @@ export class LeaseManager {
     const now = new Date();
     const newExpiresAt = new Date(now.getTime() + durationMs);
 
-    const [updated] = await db
+    // Only the affected-row count is needed here — the guard (still owned by this worker,
+    // still RUNNING) lives in the WHERE clause, and there is nothing to read back.
+    const [updateResult] = await db
       .update(asyncJobs)
       .set({
         leaseExpiresAt: newExpiresAt,
@@ -110,10 +125,9 @@ export class LeaseManager {
           eq(asyncJobs.leaseOwner, workerId),
           eq(asyncJobs.status, 'RUNNING'),
         ),
-      )
-      .returning();
+      );
 
-    return !!updated;
+    return updateResult.affectedRows > 0;
   }
 
   public async completeJob(jobId: string, workerId: string): Promise<void> {
@@ -195,9 +209,9 @@ export class LeaseManager {
 
     await db.delete(deadLetterQueue).where(eq(deadLetterQueue.originalJobId, jobId));
 
-    const [updated] = await db
-      .update(asyncJobs)
-      .set({
+    const updated = await updateReturning(
+      asyncJobs,
+      {
         status: 'PENDING',
         attempts: 0,
         runAt: now,
@@ -205,9 +219,9 @@ export class LeaseManager {
         leaseExpiresAt: null,
         lastError: null,
         updatedAt: now,
-      })
-      .where(eq(asyncJobs.id, jobId))
-      .returning();
+      },
+      eq(asyncJobs.id, jobId),
+    );
 
     return updated as JobDefinition;
   }

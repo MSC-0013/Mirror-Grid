@@ -1,5 +1,5 @@
 import { desc, gte, lte, and } from 'drizzle-orm';
-import { db } from '@mirrorgrid/db';
+import { db, insertReturning } from '@mirrorgrid/db';
 import { auditLogs } from '@mirrorgrid/db/schema';
 import type { UserPrincipal } from '../rbac/permissions.js';
 import {
@@ -85,23 +85,20 @@ export class AuditLogger {
         diff: diffJson,
       });
 
-      const [inserted] = await db
-        .insert(auditLogs)
-        .values({
-          seqNum,
-          prevHash,
-          recordHash,
-          userId,
-          userEmail,
-          action: entry.action,
-          resourceType: entry.resourceType,
-          resourceId: entry.resourceId,
-          diffJson,
-          clientIp: entry.clientIp ?? '127.0.0.1',
-          userAgent: entry.userAgent ?? 'system',
-          createdAt,
-        })
-        .returning();
+      const inserted = await insertReturning(auditLogs, {
+        seqNum,
+        prevHash,
+        recordHash,
+        userId,
+        userEmail,
+        action: entry.action,
+        resourceType: entry.resourceType,
+        resourceId: entry.resourceId,
+        diffJson,
+        clientIp: entry.clientIp ?? '127.0.0.1',
+        userAgent: entry.userAgent ?? 'system',
+        createdAt,
+      });
 
       return inserted as AuditRecord;
     } finally {

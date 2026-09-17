@@ -1,36 +1,34 @@
-import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, json, datetime, index } from 'drizzle-orm/mysql-core';
 import { relations } from 'drizzle-orm';
 
-export const asyncJobs = sqliteTable(
+export const asyncJobs = mysqlTable(
   'async_jobs',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    queueName: text('queue_name').notNull().default('default'),
-    jobType: text('job_type').notNull(),
-    payload: text('payload', { mode: 'json' })
+    queueName: varchar('queue_name', { length: 255 }).notNull().default('default'),
+    jobType: varchar('job_type', { length: 255 }).notNull(),
+    payload: json('payload')
       .$type<Record<string, unknown>>()
       .notNull()
       .$defaultFn(() => ({})),
-    status: text('status', {
-      enum: ['PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'DEAD_LETTER', 'CANCELLED'],
-    })
+    status: varchar('status', { length: 64, enum: ['PENDING', 'RUNNING', 'COMPLETED', 'FAILED', 'DEAD_LETTER', 'CANCELLED'] })
       .notNull()
       .default('PENDING'),
-    priority: integer('priority').notNull().default(100),
-    attempts: integer('attempts').notNull().default(0),
-    maxAttempts: integer('max_attempts').notNull().default(5),
-    leaseOwner: text('lease_owner'),
-    leaseExpiresAt: integer('lease_expires_at', { mode: 'timestamp_ms' }),
-    runAt: integer('run_at', { mode: 'timestamp_ms' })
+    priority: int('priority').notNull().default(100),
+    attempts: int('attempts').notNull().default(0),
+    maxAttempts: int('max_attempts').notNull().default(5),
+    leaseOwner: varchar('lease_owner', { length: 255 }),
+    leaseExpiresAt: datetime('lease_expires_at', { mode: 'date', fsp: 3 }),
+    runAt: datetime('run_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
     lastError: text('last_error'),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    updatedAt: integer('updated_at', { mode: 'timestamp_ms' })
+    updatedAt: datetime('updated_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -40,48 +38,46 @@ export const asyncJobs = sqliteTable(
   ],
 );
 
-export const deadLetterQueue = sqliteTable(
+export const deadLetterQueue = mysqlTable(
   'dead_letter_queue',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    originalJobId: text('original_job_id')
+    originalJobId: varchar('original_job_id', { length: 36 })
       .notNull()
       .references(() => asyncJobs.id, { onDelete: 'cascade' }),
-    queueName: text('queue_name').notNull(),
-    jobType: text('job_type').notNull(),
-    payload: text('payload', { mode: 'json' }).$type<Record<string, unknown>>().notNull(),
+    queueName: varchar('queue_name', { length: 255 }).notNull(),
+    jobType: varchar('job_type', { length: 255 }).notNull(),
+    payload: json('payload').$type<Record<string, unknown>>().notNull(),
     failedReason: text('failed_reason').notNull(),
     stackTrace: text('stack_trace'),
-    exhaustedAttempts: integer('exhausted_attempts').notNull(),
-    deadLetteredAt: integer('dead_lettered_at', { mode: 'timestamp_ms' })
+    exhaustedAttempts: int('exhausted_attempts').notNull(),
+    deadLetteredAt: datetime('dead_lettered_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
   (table) => [index('idx_dlq_queue').on(table.queueName, table.deadLetteredAt)],
 );
 
-export const workerNodes = sqliteTable(
+export const workerNodes = mysqlTable(
   'worker_nodes',
   {
-    id: text('id').primaryKey(),
-    hostname: text('hostname').notNull(),
-    pid: integer('pid').notNull(),
-    activeQueues: text('active_queues', { mode: 'json' })
+    id: varchar('id', { length: 36 }).primaryKey(),
+    hostname: varchar('hostname', { length: 255 }).notNull(),
+    pid: int('pid').notNull(),
+    activeQueues: json('active_queues')
       .$type<string[]>()
       .notNull()
       .$defaultFn(() => []),
-    concurrency: integer('concurrency').notNull().default(4),
-    lastHeartbeat: integer('last_heartbeat', { mode: 'timestamp_ms' })
+    concurrency: int('concurrency').notNull().default(4),
+    lastHeartbeat: datetime('last_heartbeat', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
-    status: text('status', {
-      enum: ['ALIVE', 'DRAINING', 'DEAD'],
-    })
+    status: varchar('status', { length: 64, enum: ['ALIVE', 'DRAINING', 'DEAD'] })
       .notNull()
       .default('ALIVE'),
-    startedAt: integer('started_at', { mode: 'timestamp_ms' })
+    startedAt: datetime('started_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },

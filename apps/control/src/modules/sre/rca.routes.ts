@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify';
 import { eq, and, desc, gte, lte } from 'drizzle-orm';
 import {
   db,
+  insertReturning,
   services,
   serviceDependencies,
   traceSpans,
@@ -150,21 +151,18 @@ export async function rcaRoutes(fastify: FastifyInstance) {
       const rcaResult: RcaInvestigationResult = RcaEngine.analyze({ nodes, edges, metrics });
 
       // Save investigation
-      const [investigation] = await db
-        .insert(rcaInvestigations)
-        .values({
-          worldId: params.worldId,
-          experimentRunId: body.experimentRunId ?? null,
-          rootCauseServiceId: rcaResult.rootCauseServiceId || null,
-          confidencePercentage: rcaResult.confidencePercentage,
-          failureType: rcaResult.failureType,
-          causalChain: [...rcaResult.causalPath],
-          evidenceSummary: {
-            explanation: rcaResult.explanation,
-            recommendation: rcaResult.architecturalRecommendation,
-          },
-        })
-        .returning();
+      const investigation = await insertReturning(rcaInvestigations, {
+        worldId: params.worldId,
+        experimentRunId: body.experimentRunId ?? null,
+        rootCauseServiceId: rcaResult.rootCauseServiceId || null,
+        confidencePercentage: rcaResult.confidencePercentage,
+        failureType: rcaResult.failureType,
+        causalChain: [...rcaResult.causalPath],
+        evidenceSummary: {
+          explanation: rcaResult.explanation,
+          recommendation: rcaResult.architecturalRecommendation,
+        },
+      });
 
       return reply.code(200).send({
         investigationId: investigation?.id,
@@ -296,18 +294,15 @@ export async function rcaRoutes(fastify: FastifyInstance) {
       });
 
       // Save to database
-      const [saved] = await db
-        .insert(reliabilityReports)
-        .values({
-          worldId: params.worldId,
-          title: compiled.title,
-          timeRangeStart: compiled.timeRangeStart,
-          timeRangeEnd: compiled.timeRangeEnd,
-          overallScore: compiled.overallScore,
-          errorBudgetConsumedPercent: compiled.errorBudgetConsumedPercent,
-          reportMarkdown: compiled.markdown,
-        })
-        .returning();
+      const saved = await insertReturning(reliabilityReports, {
+        worldId: params.worldId,
+        title: compiled.title,
+        timeRangeStart: compiled.timeRangeStart,
+        timeRangeEnd: compiled.timeRangeEnd,
+        overallScore: compiled.overallScore,
+        errorBudgetConsumedPercent: compiled.errorBudgetConsumedPercent,
+        reportMarkdown: compiled.markdown,
+      });
 
       return reply.code(201).send({
         reportId: saved?.id,

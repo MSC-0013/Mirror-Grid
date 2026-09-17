@@ -66,7 +66,7 @@ export class OutboxWriter {
         occurredAt: now,
       });
     } catch {
-      // In SQLite, if stream version uniqueness triggers, event remains safe in outbox
+      // If stream version uniqueness triggers, event remains safe in outbox
     }
 
     return {

@@ -1,5 +1,5 @@
 import { eq, and, gt } from 'drizzle-orm';
-import { db } from '@mirrorgrid/db';
+import { db, insertReturning } from '@mirrorgrid/db';
 import { users, sessions, organizations, organizationMembers } from '@mirrorgrid/db/schema';
 
 export class AuthRepository {
@@ -14,18 +14,15 @@ export class AuthRepository {
   }
 
   public async createUser(data: { email: string; passwordHash: string; displayName: string }) {
-    const result = await db.insert(users).values(data).returning();
-    return result[0];
+    return insertReturning(users, data);
   }
 
   public async createOrganization(data: { name: string; slug: string }) {
-    const result = await db.insert(organizations).values(data).returning();
-    return result[0];
+    return insertReturning(organizations, data);
   }
 
   public async addMember(data: { organizationId: string; userId: string }) {
-    const result = await db.insert(organizationMembers).values(data).returning();
-    return result[0];
+    return insertReturning(organizationMembers, data);
   }
 
   public async getUserOrganization(userId: string) {
@@ -50,8 +47,7 @@ export class AuthRepository {
     ipAddress?: string;
     userAgent?: string;
   }) {
-    const result = await db.insert(sessions).values(data).returning();
-    return result[0];
+    return insertReturning(sessions, data);
   }
 
   public async findActiveSession(tokenHash: string) {

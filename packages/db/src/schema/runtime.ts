@@ -1,41 +1,41 @@
-import { sqliteTable, text, integer, blob, index, check } from 'drizzle-orm/sqlite-core';
+import { mysqlTable, varchar, text, int, bigint, json, datetime, check, index } from 'drizzle-orm/mysql-core';
 import { sql } from 'drizzle-orm';
 import { worlds } from './core.js';
 import { services } from './topology.js';
 
-export const experimentRuns = sqliteTable(
+export const experimentRuns = mysqlTable(
   'experiment_runs',
   {
-    id: text('id')
+    id: varchar('id', { length: 36 })
       .primaryKey()
       .$defaultFn(() => crypto.randomUUID()),
-    worldId: text('world_id')
+    worldId: varchar('world_id', { length: 36 })
       .notNull()
       .references(() => worlds.id, { onDelete: 'cascade' }),
-    seed: blob('seed', { mode: 'bigint' }).notNull(),
-    runtimeMode: text('runtime_mode').notNull().$type<'LOGICAL' | 'CONTAINER' | 'HYBRID'>(),
-    engineVersion: text('engine_version').notNull(),
-    schemaVersion: integer('schema_version').notNull().default(1),
-    gitCommit: text('git_commit'),
-    lockfileHash: text('lockfile_hash'),
-    frozenConfig: text('frozen_config', { mode: 'json' }).notNull(),
+    seed: bigint('seed', { mode: 'bigint', unsigned: true }).notNull(),
+    runtimeMode: varchar('runtime_mode', { length: 255 }).notNull().$type<'LOGICAL' | 'CONTAINER' | 'HYBRID'>(),
+    engineVersion: varchar('engine_version', { length: 255 }).notNull(),
+    schemaVersion: int('schema_version').notNull().default(1),
+    gitCommit: varchar('git_commit', { length: 255 }),
+    lockfileHash: varchar('lockfile_hash', { length: 64 }),
+    frozenConfig: json('frozen_config').notNull(),
     configHash: text('config_hash').notNull(),
-    finalStateHash: text('final_state_hash'),
-    status: text('status')
+    finalStateHash: varchar('final_state_hash', { length: 64 }),
+    status: varchar('status', { length: 255 })
       .notNull()
       .default('CREATED')
       .$type<'CREATED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'>(),
-    experimentId: text('experiment_id'),
-    runNumber: integer('run_number').notNull().default(1),
-    currentPhase: text('current_phase').notNull().default('WARMUP'),
-    mttdMicros: blob('mttd_micros', { mode: 'bigint' }),
-    mttrMicros: blob('mttr_micros', { mode: 'bigint' }),
-    peakErrorRatePpm: integer('peak_error_rate_ppm').default(0),
-    peakP99Micros: blob('peak_p99_micros', { mode: 'bigint' }).default(0n),
-    resultSummary: text('result_summary', { mode: 'json' }).$defaultFn(() => ({})),
-    startedAt: integer('started_at', { mode: 'timestamp_ms' }),
-    completedAt: integer('completed_at', { mode: 'timestamp_ms' }),
-    createdAt: integer('created_at', { mode: 'timestamp_ms' })
+    experimentId: varchar('experiment_id', { length: 36 }),
+    runNumber: int('run_number').notNull().default(1),
+    currentPhase: varchar('current_phase', { length: 255 }).notNull().default('WARMUP'),
+    mttdMicros: bigint('mttd_micros', { mode: 'bigint', unsigned: true }),
+    mttrMicros: bigint('mttr_micros', { mode: 'bigint', unsigned: true }),
+    peakErrorRatePpm: int('peak_error_rate_ppm').default(0),
+    peakP99Micros: bigint('peak_p99_micros', { mode: 'bigint', unsigned: true }).default(0n),
+    resultSummary: json('result_summary').$defaultFn(() => ({})),
+    startedAt: datetime('started_at', { mode: 'date', fsp: 3 }),
+    completedAt: datetime('completed_at', { mode: 'date', fsp: 3 }),
+    createdAt: datetime('created_at', { mode: 'date', fsp: 3 })
       .notNull()
       .$defaultFn(() => new Date()),
   },
@@ -53,25 +53,25 @@ export const experimentRuns = sqliteTable(
   ],
 );
 
-export const experimentMetrics = sqliteTable(
+export const experimentMetrics = mysqlTable(
   'experiment_metrics',
   {
-    id: integer('id', { mode: 'number' }).primaryKey({ autoIncrement: true }),
-    runId: text('run_id')
+    id: int('id').autoincrement().primaryKey(),
+    runId: varchar('run_id', { length: 36 })
       .notNull()
       .references(() => experimentRuns.id, { onDelete: 'cascade' }),
-    serviceId: text('service_id')
+    serviceId: varchar('service_id', { length: 36 })
       .notNull()
       .references(() => services.id, { onDelete: 'cascade' }),
-    virtualTimeUs: blob('virtual_time_us', { mode: 'bigint' }).notNull(),
-    wallTimeMs: blob('wall_time_ms', { mode: 'bigint' }).notNull(),
-    requestsTotal: integer('requests_total').notNull().default(0),
-    requestsFailed: integer('requests_failed').notNull().default(0),
-    queueDepth: integer('queue_depth').notNull().default(0),
-    activeSlots: integer('active_slots').notNull().default(0),
-    circuitState: text('circuit_state').$type<'CLOSED' | 'OPEN' | 'HALF_OPEN'>(),
-    latencySamplesUs: text('latency_samples_us', { mode: 'json' }).$type<number[]>(),
-    latencyHistogram: text('latency_histogram', { mode: 'json' }).$type<number[]>(),
+    virtualTimeUs: bigint('virtual_time_us', { mode: 'bigint', unsigned: true }).notNull(),
+    wallTimeMs: bigint('wall_time_ms', { mode: 'bigint', unsigned: true }).notNull(),
+    requestsTotal: int('requests_total').notNull().default(0),
+    requestsFailed: int('requests_failed').notNull().default(0),
+    queueDepth: int('queue_depth').notNull().default(0),
+    activeSlots: int('active_slots').notNull().default(0),
+    circuitState: varchar('circuit_state', { length: 255 }).$type<'CLOSED' | 'OPEN' | 'HALF_OPEN'>(),
+    latencySamplesUs: json('latency_samples_us').$type<number[]>(),
+    latencyHistogram: json('latency_histogram').$type<number[]>(),
   },
   (table) => [
     index('experiment_metrics_run_service_time_idx').on(
